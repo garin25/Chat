@@ -1,0 +1,406 @@
+/* =========================================
+   1. VARIABLES Y RESET (Tema Oscuro)
+   ========================================= */
+:root {
+  /* Fondos */
+  --bg-app: #111b21;        /* Fondo general oscuro (detrás de todo) */
+  --bg-sidebar: #111b21;    /* Barra lateral */
+  --bg-card: #202c33;       /* Tarjetas de contacto / Modales / Inputs */
+  --bg-input: #2a3942;      /* Input de texto */
+  --bg-hover: #202c33;      /* Hover en listas */
+
+  /* Textos */
+  --text-primary: #e9edef;  /* Blanco casi puro */
+  --text-secondary: #8696a0; /* Gris suave para info secundaria */
+
+  /* Acentos (Estilo WhatsApp Dark) */
+  --accent-color: #00a884;  /* Verde característico */
+  --msg-me: #005c4b;        /* Burbuja mensaje mío */
+  --msg-other: #202c33;     /* Burbuja mensaje otro */
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+  background-color: var(--bg-app);
+  color: var(--text-primary);
+  height: 100vh;
+  overflow: hidden; /* Evita scroll en toda la pagina */
+}
+
+/* Scrollbar Oscuro Estilo WhatsApp */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent; 
+}
+::-webkit-scrollbar-thumb {
+  background: #374045; 
+  border-radius: 3px;
+}
+
+/* =========================================
+   2. LAYOUT PRINCIPAL (Wsp.tsx)
+   ========================================= */
+.app-container {
+  display: flex;        /* Pone la sidebar y el chat uno al lado del otro */
+  width: 100vw;         /* Ancho total de la ventana */
+  height: 100vh;        /* Altura total de la ventana (CLAVE) */
+  overflow: hidden;     /* Evita que aparezca scroll en toda la página */
+  background-color: var(--bg-app);
+}
+
+/* =========================================
+   3. SIDEBAR Y LISTA DE CONTACTOS
+   ========================================= */
+.sidebar {
+  width: 30%;           /* O 400px, lo que prefieras */
+  max-width: 450px;
+  min-width: 300px;
+  border-right: 1px solid #2f3b43; /* Línea divisoria sutil */
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bg-sidebar);
+  overflow: scroll;
+}
+
+.sidebar-header {
+  padding: 10px 16px;
+  background-color: var(--bg-card); /* Cabecera un poco más clara */
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 60px;
+  flex-shrink: 0;
+}
+
+.lista-contactos {
+  flex: 1;              /* Ocupa el espacio restante */
+  overflow-y: auto;     /* Scroll interno */
+}
+
+.contact-item {
+  display: flex;
+  align-items: center;
+  padding: 12px 15px;
+  cursor: pointer;
+  border-bottom: 1px solid #222d34; /* Separador muy sutil */
+  transition: background 0.2s;
+}
+
+.contact-item:hover {
+  background-color: var(--bg-hover);
+}
+
+.contact-item img {
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  margin-right: 15px;
+  object-fit: cover;
+}
+
+.contact-item p {
+  font-size: 1.05rem;
+  color: var(--text-primary);
+}
+
+.contact-item.selected {
+  background-color: rgba(0, 168, 132, 0.15); /* Un verde muy suave tipo WhatsApp */
+}
+
+/* Opcional: Centrar el checkbox */
+.checkbox-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding-right: 10px;
+}
+
+/* El contenedor de los botones */
+.footer-actions {
+  position: absolute; /* Esto lo saca del flujo normal para superponerlo */
+  bottom: 0;          /* Lo pega al fondo */
+  left: 0;
+  width: 100%;        /* Que ocupe todo el ancho */
+  
+  display: flex;      /* Para alinear los botones */
+  justify-content: space-between; /* Separa los botones a los extremos */
+  align-items: center;
+  gap: 10px;          /* Espacio entre botones */
+  
+  padding: 10px 15px;
+  background-color: #202c33; /* Fondo oscuro (tipo barra de WSP) */
+  box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.3); /* Sombra hacia arriba para dar profundidad */
+  z-index: 100;       /* Asegura que quede por encima de la lista */
+  box-sizing: border-box;
+  
+  /* Opcional: Una pequeña animación de entrada */
+  animation: slideUp 0.3s ease-out;
+}
+
+/* Botón "Continuar" (Estilo Primario) */
+.footer-actions button:first-child {
+  background-color: #00a884; /* Verde WSP */
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 20px; /* Bordes redondeados */
+  font-weight: bold;
+  cursor: pointer;
+  flex-grow: 1; /* Ocupa el espacio disponible para destacar */
+  transition: background 0.2s;
+}
+
+.footer-actions button:first-child:hover {
+  background-color: #008f6f;
+}
+
+/* Estado deshabilitado del botón continuar */
+.footer-actions button:first-child:disabled {
+  background-color: #3b4a54;
+  color: #8696a0;
+  cursor: not-allowed;
+}
+
+/* Botón "Cancelar" (Estilo Secundario/Texto) */
+.footer-actions button:last-child {
+  background-color: transparent;
+  border: 1px solid #ef5350; /* Borde rojo sutil */
+  color: #ef5350;
+  padding: 10px 15px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.footer-actions button:last-child:hover {
+  background-color: rgba(239, 83, 80, 0.1); /* Fondo rojo muy tenue al pasar mouse */
+}
+
+/* Animación opcional */
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+/* =========================================
+   4. CHAT ACTIVO (LAYOUT Y SCROLL)
+   ========================================= */
+
+/* Contenedor que envuelve al componente ChatActivo */
+.chat-container {       
+  flex: 1;              /* MAGIA: "Toma todo el ancho que sobre a la derecha" */
+  display: flex;        /* Para poder estirar el hijo */
+  height: 100%;         /* Respeta la altura del padre */
+  min-width: 0;         /* Truco técnico para evitar desbordes en flexbox */
+  background-color: #0b141a; 
+  /* Patrón de fondo opcional */
+  background-image: url("https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png");
+  background-blend-mode: overlay;
+  opacity: 0.95; /* Ajuste sutil del fondo */
+}
+
+/* El componente ChatActivo en sí mismo */
+.chat-window {
+  display: flex;
+  flex-direction: column; /* Apila los hijos verticalmente */
+  height: 100%;           /* Ocupa toda la altura disponible */
+  width: 100%;            /* Ocupa todo el ancho disponible */
+  position: relative;     
+}
+
+/* Área scrollable de mensajes */
+.message-list {
+  flex: 1;                /* "Cómete" todo el espacio vacío entre header e input */
+  overflow-y: auto;       /* Solo TÚ tienes barra de desplazamiento */
+  padding: 20px 5%;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-height: 0;          /* TRUCO IMPORTANTE para que el scroll funcione en Flexbox */
+}
+
+/* Estilos de las Burbujas */
+.mensaje-card {
+  max-width: 65%;
+  padding: 6px 9px;
+  border-radius: 8px;
+  position: relative;
+  font-size: 0.9rem;
+  line-height: 19px;
+  box-shadow: 0 1px 0.5px rgba(0,0,0,0.13);
+  margin-bottom: 2px;
+}
+
+/* Mensaje Recibido (El otro) */
+.message-received {
+  background-color: #202c33; /* Gris oscuro */
+  color: #e9edef;
+  align-self: flex-start; /* A la izquierda */
+  border-radius: 0px 12px 12px 12px; /* Esa puntita característica */
+  padding: 6px 9px;
+  max-width: 65%;
+  margin-bottom: 4px;
+}
+
+/* Mensaje Enviado (Yo) */
+.message-sent {
+  background-color: #005c4b; /* El VERDE oscuro clásico de WP */
+  color: #e9edef;
+  align-self: flex-end; /* A la derecha */
+  border-radius: 12px 0px 12px 12px;
+  padding: 6px 9px;
+  max-width: 65%;
+  margin-bottom: 4px;
+}
+
+
+/* --- ÁREA DEL INPUT (Fija abajo) --- */
+.chat-input-area {
+  flex-shrink: 0;         /* Prohibido encogerse */
+  padding: 10px 16px;
+  background-color: var(--bg-card); /* Fondo de la barra */
+  width: 100%;            
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Input específico del chat */
+.chat-input-area input {
+  flex: 1;
+  background-color: var(--bg-input); 
+  border: none;
+  border-radius: 8px;
+  padding: 9px 12px;
+  color: var(--text-primary);
+  font-size: 15px;
+  outline: none;
+}
+
+.chat-input-area button {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary); 
+  cursor: pointer;
+  font-size: 1.2rem;
+  padding: 0 10px;
+}
+.chat-input-area button:hover {
+    color: var(--text-primary);
+}
+
+/*NOTIFICACIONES*/
+/* Badge contenedor */
+.notification-badge {
+  background-color: #00a884; /* Verde WhatsApp oficial */
+  color: #111b21; /* Texto oscuro para buen contraste, o white si prefieres */
+  color: #ffffff; 
+  
+  font-size: 0.75rem; /* 12px aprox */
+  font-weight: 600;
+  
+  /* Geometría */
+  min-width: 22px; /* Ancho mínimo para que sea redondo si hay 1 dígito */
+  height: 22px;
+  padding: 0 6px; /* Relleno lateral para números largos (100) */
+  border-radius: 11px; /* La mitad de la altura para bordes redondos */
+  
+  /* Centrado perfecto del número */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  /* Ubicación (ajusta esto según tu layout flex) */
+  margin-left: auto; /* Empuja el badge a la derecha si usas Flexbox */
+  
+  /* Animación suave al aparecer */
+  animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* Animación de entrada */
+@keyframes popIn {
+  0% { transform: scale(0); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* =========================================
+   6. ESTILOS GENÉRICOS (Modales, Login, etc)
+   ========================================= */
+input[type="text"], 
+input[type="number"],
+input[type="password"] {
+  background-color: var(--bg-input);
+  border: none;
+  border-radius: 8px;
+  padding: 12px;
+  color: var(--text-primary);
+  width: 100%;
+  outline: none;
+  margin-bottom: 10px;
+}
+
+input::placeholder {
+  color: var(--text-secondary);
+}
+
+/* Botón genérico (Login, Modales) */
+.btn-primary {
+  background-color: var(--accent-color);
+  color: #111b21; /* Texto oscuro sobre verde */
+  border: none;
+  padding: 10px 20px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: opacity 0.2s;
+  width: 100%;
+}
+
+.btn-primary:hover {
+  opacity: 0.9;
+}
+
+/* =========================================
+   6. EL MODAL
+   ========================================= */
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7); /* Fondo oscuro */
+  backdrop-filter: blur(2px);
+  display: flex; 
+  justify-content: center; 
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background-color: var(--bg-card);
+  padding: 25px;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 400px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+  border: 1px solid #2f3b43;
+}
+
+.modal-content h2 {
+  margin-bottom: 20px;
+  color: var(--text-primary);
+  text-align: center;
+}
+
+.modal-content label {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  margin-bottom: 5px;
+  display: block;
+}
