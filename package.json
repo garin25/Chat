@@ -3,5 +3,8 @@
     "@hookform/resolvers": "^5.2.2",
     "react-hook-form": "^7.68.0",
     "zod": "^4.1.13"
+  },
+  "devDependencies": {
+    "@types/node": "^25.0.8"
   }
 }

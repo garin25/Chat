@@ -1,5 +1,5 @@
+// 1. Define la forma de TU usuario (ajusta según tu base de datos)
 export interface User {
-    name:string,
-    username:string,
-    initialIsFollowing:boolean
+  id: number;
+  telefono: string;
 }

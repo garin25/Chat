@@ -1,14 +1,14 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { ProtectedRoute } from './components/ProtectedRoute';
 import ThemeContext from './ThemeContext';
 import { useState } from 'react';
 import ThemedComponent from './components/ThemedComponent/ThemedComponent';
 import { ErrorBoundary } from 'react-error-boundary';
-import ErrorFallback from './components/ErrorFallback/ErrorFallback';
 import Navbar from './components/Navbar/Navbar';
-import { Wsp } from './components/Wsp/Wsp';
-import LoginWsp from './components/LoginWsp/LoginWsp';
-import { AuthProvider } from './AuthContext';
+import { AuthProvider } from './features/auth/AuthContext';
+import ErrorFallback from './components/ui/ErrorFallback';
+import LoginWsp from './pages/LoginWsp';
+import { ProtectedRoute } from './components/routes/ProtectedRoute';
+import { Wsp } from './pages/Wsp';
 
 
 function App() {
