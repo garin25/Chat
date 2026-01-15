@@ -5,7 +5,9 @@ import com.example.demo.dominio.ServicioLoginImpl;
 import com.example.demo.dto.*;
 import com.example.demo.entidades.*;
 import com.example.demo.entidades.enums.EstadoMensaje;
+import com.example.demo.excepciones.RecursoNoEncontradoException;
 import com.example.demo.infraestructura.RepositorioMensaje;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -35,53 +37,25 @@ public class ControladorChat {
     // GET /api/chats
     @GetMapping("/sidebar")
     public ResponseEntity<List<ChatSidebarDTO>> getSidebar(Authentication authentication) {
-
-        // 1. Spring Security devuelve el "subject" del token.
-        // Si generaste el token con el teléfono, esto devuelve el string del teléfono.
-        String telefono = authentication.getName();
-
-        // 2. Buscamos en la base de datos usando el teléfono
-        Usuario yo = servicioLogin.findByTelefono(telefono)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado (Teléfono incorrecto en Token)"));
-
-        // 3. ¡Ahora tenés tu ID real!
+        Usuario yo = getUsuarioLogueado(authentication);
         Long miId = yo.getId();
-
-        // 4. Llamamos al servicio
         return ResponseEntity.ok(servicioChat.getSidebarChats(miId));
     }
 
-
-
     @GetMapping("/all")
     public ResponseEntity<List<MensajeDTO>> getMensajesParaElNum(Authentication authentication) {
-
-        String telefono = authentication.getName();
-
-        Usuario yo = servicioLogin.findByTelefono(telefono)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado (Teléfono incorrecto en Token)"));
-
+        Usuario yo = getUsuarioLogueado(authentication);
         Long miId = yo.getId();
-
         return ResponseEntity.ok(servicioChat.getMensajesParaElNum(miId));
     }
 
     @GetMapping("/{chatId}/messages")
     public ResponseEntity<List<MensajeDTO>> getMensajesPorChat(Authentication authentication,
-    @PathVariable("chatId") Long chatId) {
-
-        String telefono = authentication.getName();
-
-        Usuario yo = servicioLogin.findByTelefono(telefono)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado (Teléfono incorrecto en Token)"));
-
+                                                               @PathVariable("chatId") Long chatId) {
+        Usuario yo = getUsuarioLogueado(authentication);
         Long miId = yo.getId();
 
-        try {
-            return ResponseEntity.ok(servicioChat.getMensajesPorChat(miId,chatId));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
-        }
+        return ResponseEntity.ok(servicioChat.getMensajesPorChat(miId, chatId));
     }
 
 
@@ -92,12 +66,9 @@ public class ControladorChat {
                                                          Authentication authentication
     ) {
         String contenido = payload.get("contenido");
-        String telefono = authentication.getName();
-
-        Usuario yo = servicioLogin.findByTelefono(telefono)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-
-        Mensaje mensajeGuardado = servicioChat.enviarAlChat(yo.getId(), chatId, contenido);
+        Usuario yo = getUsuarioLogueado(authentication);
+        Long miId = yo.getId();
+        Mensaje mensajeGuardado = servicioChat.enviarAlChat(miId, chatId, contenido);
 
         // DELEGAMOS TODO EL WEBSOCKET AL OTRO MÉTODO
         // Y recuperamos el DTO para devolverlo en el HTTP (opcional pero recomendado)
@@ -105,6 +76,7 @@ public class ControladorChat {
 
         return ResponseEntity.ok(mensajeDto);
     }
+
     @Transactional
     public NotificacionDTO procesarYEnviarMensaje(Mensaje mensajeGuardado) { // Cambié void por DTO
 
@@ -144,35 +116,20 @@ public class ControladorChat {
 
     @PostMapping("/new")
     public ResponseEntity<?> agendarContacto(
-            @RequestBody NewContactDTO body,
+            @RequestBody @Valid NewContactDTO body,
             Authentication authentication
-    ){
-        try {
-            String telefono = authentication.getName();
-
-            Usuario yo = servicioLogin.findByTelefono(telefono)
-                    .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-
-            return ResponseEntity.ok(servicioChat.agendarContacto(yo, body));
-        } catch (Exception e) {
-             return ResponseEntity.badRequest().body(e.getMessage());
-        }
+    ) {
+        Usuario yo = getUsuarioLogueado(authentication);
+        return ResponseEntity.ok(servicioChat.agendarContacto(yo, body));
     }
 
     @PostMapping("/group")
     public ResponseEntity<?> crearGrupo(
-            @RequestBody NewGroupDTO body,
+            @RequestBody @Valid NewGroupDTO body,
             Authentication authentication
-    ){
-        try {
-            String telefono = authentication.getName();
-
-            Usuario yo = servicioLogin.findByTelefono(telefono)
-                    .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-            return ResponseEntity.ok(servicioChat.crearGrupo(yo, body));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
+    ) {
+        Usuario yo = getUsuarioLogueado(authentication);
+        return ResponseEntity.ok(servicioChat.crearGrupo(yo, body));
     }
 
 
@@ -180,24 +137,14 @@ public class ControladorChat {
     public ResponseEntity<String> marcarMensajesComoLeidos(
             Authentication authentication,
             @PathVariable Long chatId
-    ){
-
-        String telefono = authentication.getName();
-
-        Usuario yo = servicioLogin.findByTelefono(telefono)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-
-        try {
-            servicioChat.marcarMensajesComoLeidos(chatId,yo.getId());
-            return  ResponseEntity.ok("Mensaje leido correctamente");
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
-            // O mejor: return ResponseEntity.badRequest().body(e.getMessage());
-        }
+    ) {
+        Usuario yo = getUsuarioLogueado(authentication);
+        servicioChat.marcarMensajesComoLeidos(chatId, yo.getId());
+        return ResponseEntity.ok("Mensaje leido correctamente");
     }
 
     @MessageMapping("/chat/message-delivered")
-    public void confirmarEntrega(@Payload ConfirmacionDTO confirmacion) {
+    public void confirmarEntrega(@Payload @Valid ConfirmacionDTO confirmacion) {
         // 1. Buscar mensaje y actualizar estado a ENTREGADO en DB
         Mensaje msg = servicioChat.findMensajeById(confirmacion.getMessageId());
         msg.setEstado(EstadoMensaje.ENTREGADO);
@@ -211,6 +158,7 @@ public class ControladorChat {
                 new EstadoMensajeDTO(msg.getId(), EstadoMensaje.ENTREGADO)
         );
     }
+
     @MessageMapping("/chat/mark-as-read")
     public void marcarChatComoLeido(@Payload Map<String, Long> payload, Principal user) {
         Long chatId = payload.get("chatId");
@@ -218,10 +166,10 @@ public class ControladorChat {
         Usuario lector = servicioLogin.findByTelefono(telefonoLector)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado")); // Obtener ID del usuario actual desde Principal
 
-                // 1. Lógica de Negocio (Servicio)
-                // "Buscar todos los mensajes en este chat enviados por EL OTRO
-                // que todavía no estén en estado LEIDO y pasarlos a LEIDO"
-                List<Mensaje> mensajesLeidos = servicioChat.marcarMensajesComoLeidos(chatId, lector.getId());
+        // 1. Lógica de Negocio (Servicio)
+        // "Buscar todos los mensajes en este chat enviados por EL OTRO
+        // que todavía no estén en estado LEIDO y pasarlos a LEIDO"
+        List<Mensaje> mensajesLeidos = servicioChat.marcarMensajesComoLeidos(chatId, lector.getId());
 
 
         // 2. Avisar al REMITENTE (El que escribió los mensajes)
@@ -233,6 +181,15 @@ public class ControladorChat {
                     new EstadoMensajeDTO(msg.getId(), EstadoMensaje.LEIDO)
             );
         }
+    }
+
+    // antes hacia esto new RuntimeException("Usuario no encontrado (Teléfono incorrecto en Token)")); LOS TESTS CAPAZ FALLAN
+    private Usuario getUsuarioLogueado(Authentication authentication) {
+        // 1. Spring Security devuelve el "subject" del token.
+        // Si generaste el token con el teléfono, esto devuelve el string del teléfono.
+        String telefono = authentication.getName();
+        return servicioLogin.findByTelefono(telefono)
+                .orElseThrow(() -> new RecursoNoEncontradoException("El usuario logueado no existe en la DB"));
     }
 
 }

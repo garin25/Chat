@@ -3,6 +3,9 @@ package com.example.demo.dominio;
 import com.example.demo.dto.*;
 import com.example.demo.entidades.*;
 import com.example.demo.entidades.enums.EstadoMensaje;
+import com.example.demo.excepciones.OperacionInvalidaException;
+import com.example.demo.excepciones.RecursoNoEncontradoException;
+import com.example.demo.excepciones.RecursoRepetidoException;
 import com.example.demo.infraestructura.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -118,22 +121,22 @@ public class ServicioChatImpl {
     }
 
     @Transactional
-    public Contacto agendarContacto(Usuario usuarioTitular, NewContactDTO contactoDTO) throws Exception {
+    public Contacto agendarContacto(Usuario usuarioTitular, NewContactDTO contactoDTO) {
 
         // 1. Validar que el usuario a agendar exista
         Usuario usuarioContacto = repositorioLogin.findByTelefono(contactoDTO.getTelefono())
-                .orElseThrow(() -> new Exception("No se encontró el usuario con ese teléfono"));
+                .orElseThrow(() -> new RecursoNoEncontradoException("No se encontró el usuario con ese teléfono"));
 
         // 2. Validar auto-agendamiento
         if (usuarioTitular.getId().equals(usuarioContacto.getId())) {
-            throw new Exception("No puedes agendarte a ti mismo");
+            throw new OperacionInvalidaException("No puedes agendarte a ti mismo");
         }
 
         // 3. Validar si ya lo tengo en mi agenda
         // Usamos el método estándar sugerido (Opción A)
         boolean yaExiste = repositorioContacto.existsByTitularAndContactoUsuario(usuarioTitular, usuarioContacto);
         if (yaExiste) {
-            throw new Exception("Este usuario ya está en tus contactos");
+            throw new RecursoRepetidoException("Este usuario ya está en tus contactos");
         }
 
         // 4. Guardar el CONTACTO (Agenda)
@@ -169,19 +172,22 @@ public class ServicioChatImpl {
     }
 
     @Transactional
-    public Chat crearGrupo(Usuario yo, NewGroupDTO body) throws Exception {
+    public Chat crearGrupo(Usuario yo, NewGroupDTO body){
 
-        if(body.getNombreGrupo()==null){
+       /*   Ya esta @Valid en los DTO
+       if(body.getNombreGrupo()==null){
             throw new Exception("El nombre del grupo es obligatorio");
         }
+        */
+        // Este lo dejo por si pasan una lista vacia
         if(body.getIntegrantes().isEmpty()){
-            throw new Exception("Los integrantes son obligatorios");
+            throw new RecursoNoEncontradoException("Los integrantes son obligatorios");
         }
 
         List<Usuario> integrantes = new ArrayList<>();
         for (Long idIntegrante : body.getIntegrantes()){
             Usuario integrante = repositorioLogin.findById(idIntegrante)
-                    .orElseThrow(() -> new Exception("No se encontraron los integrantes"));
+                    .orElseThrow(() -> new RecursoNoEncontradoException("No se encontraron los integrantes"));
             integrantes.add(integrante);
         }
 
@@ -231,10 +237,10 @@ public class ServicioChatImpl {
         return mensajesActualizados;
     }
 
-    public List<MensajeDTO> getMensajesPorChat(Long miId, Long chatId) throws Exception {
+    public List<MensajeDTO> getMensajesPorChat(Long miId, Long chatId) throws RecursoNoEncontradoException {
         boolean esParticipante = repositorioParticipante.existsByChatIdAndUsuarioId(chatId,miId);
         if(!esParticipante){
-            throw new Exception("El usuario no participa en ese chat");
+            throw new RecursoNoEncontradoException("El usuario no participa en ese chat");
         }
 
         List<Mensaje>mensajes =  repositorioMensaje.findAllByChatIdOrderBySentAtAsc(chatId);

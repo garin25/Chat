@@ -4,6 +4,9 @@ import com.example.demo.dto.NewContactDTO;
 import com.example.demo.dto.NewGroupDTO;
 import com.example.demo.entidades.*;
 import com.example.demo.entidades.enums.EstadoMensaje;
+import com.example.demo.excepciones.OperacionInvalidaException;
+import com.example.demo.excepciones.RecursoNoEncontradoException;
+import com.example.demo.excepciones.RecursoRepetidoException;
 import com.example.demo.infraestructura.*;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -64,7 +67,7 @@ class ServicioChatTest {
         // 2. WHEN & THEN (Ejecutamos y Verificamos al mismo tiempo)
         // AssertJ nos permite leer el mensaje de la excepción de forma muy fluida
         assertThatThrownBy(() -> servicioChat.agendarContacto(usuario, dto))
-                .isInstanceOf(Exception.class) // O tu excepción personalizada
+                .isInstanceOf(RecursoNoEncontradoException.class) // O tu excepción personalizada
                 .hasMessage("No se encontró el usuario con ese teléfono"); // <--- VALIDAS EL TEXTO EXACTO
     }
 
@@ -84,7 +87,7 @@ class ServicioChatTest {
                 .thenReturn(Optional.of(usuario));
 
         assertThatThrownBy(() -> servicioChat.agendarContacto(usuario, dto))
-                .isInstanceOf(Exception.class)
+                .isInstanceOf(OperacionInvalidaException.class)
                 .hasMessage("No puedes agendarte a ti mismo");
     }
 
@@ -113,7 +116,7 @@ class ServicioChatTest {
                 .thenReturn(true);
 
         assertThatThrownBy(() -> servicioChat.agendarContacto(usuario, dto))
-                .isInstanceOf(Exception.class)
+                .isInstanceOf(RecursoRepetidoException.class)
                 .hasMessage("Este usuario ya está en tus contactos");
     }
 
@@ -223,8 +226,8 @@ class ServicioChatTest {
         dto.setIntegrantes(integrantes);
 
         assertThatThrownBy(() -> servicioChat.crearGrupo(usuario, dto))
-                .isInstanceOf(Exception.class)
-                .hasMessage("El nombre del grupo es obligatorio");
+                .isInstanceOf(RecursoNoEncontradoException.class)
+                .hasMessage("No se encontraron los integrantes");
     }
 
     @Test
@@ -240,7 +243,7 @@ class ServicioChatTest {
         dto.setIntegrantes(integrantes);
 
         assertThatThrownBy(() -> servicioChat.crearGrupo(usuario, dto))
-                .isInstanceOf(Exception.class)
+                .isInstanceOf(RecursoNoEncontradoException.class)
                 .hasMessage("Los integrantes son obligatorios");
     }
 
@@ -262,7 +265,7 @@ class ServicioChatTest {
                 .thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> servicioChat.crearGrupo(usuario, dto))
-                .isInstanceOf(Exception.class)
+                .isInstanceOf(RecursoNoEncontradoException.class)
                 .hasMessage("No se encontraron los integrantes");
     }
 

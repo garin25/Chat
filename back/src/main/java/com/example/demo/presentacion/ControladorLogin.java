@@ -4,6 +4,7 @@ import com.example.demo.dominio.ServicioLoginImpl;
 import com.example.demo.dto.AuthRequest;
 import com.example.demo.dto.AuthResponse;
 import com.example.demo.entidades.Usuario;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,7 +20,7 @@ public class ControladorLogin {
 
     // POST /api/usuarios/registrar
     @PostMapping("/registrar")
-    public ResponseEntity<String> registrar(@RequestBody AuthRequest request) {
+    public ResponseEntity<String> registrar(@RequestBody @Valid AuthRequest request) {
         // 1. Llamamos al servicio.
         // Si el usuario existe, el servicio lanza ExcepcionDeNegocio
         // y el GlobalExceptionHandler devuelve el 400 automáticamente.
@@ -31,7 +32,7 @@ public class ControladorLogin {
 
     // POST /api/usuarios/login
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(@RequestBody AuthRequest request) {
+    public ResponseEntity<AuthResponse> login(@RequestBody @Valid AuthRequest request) {
         // 1. Llamamos al servicio.
         // Si la pass está mal, lanza ExcepcionDeAutenticacion -> 401 automático.
         AuthResponse token = servicioLogin.loginWsp(request);

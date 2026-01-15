@@ -3,12 +3,14 @@ package com.example.demo.dto;
 import com.example.demo.entidades.enums.EstadoMensaje;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 import java.time.LocalDateTime;
 
 @Data
 public class MensajeDTO {
     private Long id;
+    @NotBlank(message = "El contenido es obligatorio")
     private String contenido;
     private LocalDateTime sentAt;
 
