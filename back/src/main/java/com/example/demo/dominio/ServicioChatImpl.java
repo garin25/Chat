@@ -1,0 +1,250 @@
+package com.example.demo.dominio;
+
+import com.example.demo.dto.*;
+import com.example.demo.entidades.*;
+import com.example.demo.entidades.enums.EstadoMensaje;
+import com.example.demo.infraestructura.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+@Service
+@Transactional
+public class ServicioChatImpl {
+
+    @Autowired
+    private RepositorioChat repositorioChat;
+    @Autowired
+    private RepositorioContacto repositorioContacto;
+    @Autowired
+    private RepositorioLogin repositorioLogin;
+    @Autowired
+    private RepositorioParticipante repositorioParticipante;
+    @Autowired
+    private RepositorioMensaje repositorioMensaje;
+
+    public List<ChatSidebarDTO> getSidebarChats(Long miId) {
+        List<ChatSidebarDTO> respuesta = new ArrayList<>();
+
+        // 1. Buscamos los chats crudos de la BD
+        List<Chat> chats = repositorioChat.encontrarMisChatsCompletos(miId);
+
+        // 2. Procesamos uno por uno
+        for (Chat chat : chats) {
+            ChatSidebarDTO dto = new ChatSidebarDTO();
+            dto.setChatId(String.valueOf(chat.getId()));
+            dto.setUltimoMensaje("Mensaje..."); // O chat.getMensajes()...
+             Long cantidadMensajesNoLeidos = repositorioMensaje.contarMensajesNoLeidos(chat.getId(), miId);
+             dto.setCantidadNoLeidos(cantidadMensajesNoLeidos);
+            // --- LÓGICA PARA SABER SI ES GRUPO O PRIVADO ---
+
+            // Criterio: Si tiene nombre definido O tiene más de 2 personas, es Grupo.
+            // (Ajustá este criterio según como guardes tus grupos en BD)
+            boolean esGrupo = (chat.getNombre() != null && !chat.getNombre().isEmpty())
+                    || chat.getParticipantes().size() > 2;
+
+            if (esGrupo) {
+                // === ES UN GRUPO ===
+                dto.setTipo("group");
+                dto.setNombre(chat.getNombre()); // "Los Pibes"
+                dto.setAvatarUrl(chat.getAvatarUrl()); // Avatar del grupo
+                dto.setUsuarioId(null); // Node devolvía null en grupos
+                dto.setEstado(null);
+            } else {
+                // === ES UN CHAT PRIVADO ===
+                dto.setTipo("private");
+
+                // Buscamos al OTRO participante (que no soy yo)
+                Usuario otroUsuario = chat.getParticipantes().stream()
+                        .map(p -> p.getUsuario())
+                        .filter(u -> !u.getId().equals(miId)) // Filtramos mi ID
+                        .findFirst()
+                        .orElse(null);
+
+                if (otroUsuario != null) {
+                    dto.setUsuarioId(String.valueOf(otroUsuario.getId()));
+                    dto.setNombre(otroUsuario.getNombre()); // "Pepito"
+                    dto.setAvatarUrl(otroUsuario.getAvatarUrl());
+                    dto.setEstado(otroUsuario.getEstado());
+                }
+            }
+
+            respuesta.add(dto);
+        }
+
+        return respuesta;
+    }
+
+    public List<MensajeDTO> getMensajesParaElNum(Long miId) {
+        List<Mensaje> mensajes = repositorioChat.getMensajesParaElNum(miId);
+
+        // Convertimos la lista de Entidades a DTOs
+        return mensajes.stream().map(this::convertirADTO).collect(Collectors.toList());
+    }
+
+    private MensajeDTO convertirADTO(Mensaje m) {
+        MensajeDTO dto = new MensajeDTO();
+        dto.setId(m.getId());
+        dto.setContenido(m.getContenido());
+        dto.setSentAt(m.getSentAt());
+        dto.setChatId(m.getChat().getId());
+        dto.setEstado(m.getEstado());
+
+        MensajeDTO.SenderDTO sender = new MensajeDTO.SenderDTO();
+        sender.setId(m.getSender().getId());
+        sender.setNombre(m.getSender().getNombre());
+        sender.setAvatarUrl(m.getSender().getAvatarUrl());
+
+        dto.setSender(sender);
+        return dto;
+    }
+
+    public Mensaje enviarAlChat(Long miId, Long chatId, String contenido) {
+        // necesito guardar los objetos?
+        // sender
+        //chat
+        Optional<Usuario> usuario = repositorioLogin.findById(miId);
+        Optional<Chat> chat = repositorioChat.findById(chatId);
+        Mensaje mensaje = new Mensaje();
+        mensaje.setSender(usuario.get());
+        mensaje.setContenido(contenido);
+        mensaje.setChat(chat.get());
+        return  repositorioMensaje.save(mensaje);
+    }
+
+    @Transactional
+    public Contacto agendarContacto(Usuario usuarioTitular, NewContactDTO contactoDTO) throws Exception {
+
+        // 1. Validar que el usuario a agendar exista
+        Usuario usuarioContacto = repositorioLogin.findByTelefono(contactoDTO.getTelefono())
+                .orElseThrow(() -> new Exception("No se encontró el usuario con ese teléfono"));
+
+        // 2. Validar auto-agendamiento
+        if (usuarioTitular.getId().equals(usuarioContacto.getId())) {
+            throw new Exception("No puedes agendarte a ti mismo");
+        }
+
+        // 3. Validar si ya lo tengo en mi agenda
+        // Usamos el método estándar sugerido (Opción A)
+        boolean yaExiste = repositorioContacto.existsByTitularAndContactoUsuario(usuarioTitular, usuarioContacto);
+        if (yaExiste) {
+            throw new Exception("Este usuario ya está en tus contactos");
+        }
+
+        // 4. Guardar el CONTACTO (Agenda)
+        Contacto nuevoContacto = new Contacto();
+        nuevoContacto.setTitular(usuarioTitular);
+        nuevoContacto.setContactoUsuario(usuarioContacto);
+        nuevoContacto.setAlias(contactoDTO.getNombre()); // Nombre con el que yo lo quiero ver
+        Contacto contactoGuardado = repositorioContacto.save(nuevoContacto);
+
+        // 5. LÓGICA DEL CHAT: ¿Ya tienen un chat privado previo?
+        // (Omitir este paso si siempre quieres crear uno nuevo, pero lo ideal es reutilizar)
+        // Aquí simplifico creando uno nuevo como tenías, pero ojo con los duplicados.
+
+        Chat nuevoChat = new Chat();
+        nuevoChat.setTipo("private");
+        nuevoChat.setCreatedAt(LocalDateTime.now());
+        Chat chatGuardado = repositorioChat.save(nuevoChat);
+
+        // 6. Crear los Participantes
+        Participante p1 = new Participante();
+        p1.setUsuario(usuarioContacto);
+        p1.setChat(chatGuardado);
+
+        Participante p2 = new Participante(); // Yo
+        p2.setUsuario(usuarioTitular);
+        p2.setChat(chatGuardado);
+
+        // 7. Guardar AMBOS participantes
+        repositorioParticipante.save(p1);
+        repositorioParticipante.save(p2);
+
+        return contactoGuardado;
+    }
+
+    @Transactional
+    public Chat crearGrupo(Usuario yo, NewGroupDTO body) throws Exception {
+
+        if(body.getNombreGrupo()==null){
+            throw new Exception("El nombre del grupo es obligatorio");
+        }
+        if(body.getIntegrantes().isEmpty()){
+            throw new Exception("Los integrantes son obligatorios");
+        }
+
+        List<Usuario> integrantes = new ArrayList<>();
+        for (Long idIntegrante : body.getIntegrantes()){
+            Usuario integrante = repositorioLogin.findById(idIntegrante)
+                    .orElseThrow(() -> new Exception("No se encontraron los integrantes"));
+            integrantes.add(integrante);
+        }
+
+        Chat chat = new Chat();
+        chat.setTipo("group");
+        chat.setCreatedAt(LocalDateTime.now());
+        chat.setNombre(body.getNombreGrupo());
+        chat.setAvatarUrl("https://i.pravatar.cc/150?u="+body.getNombreGrupo());
+        Chat chatReturning = repositorioChat.save(chat);
+        Participante p1 = new Participante();
+        p1.setUsuario(yo);
+        p1.setChat(chatReturning);
+        repositorioParticipante.save(p1);
+        for (Usuario integrant : integrantes){
+            Participante p2 = new Participante();
+            p2.setUsuario(integrant);
+            p2.setChat(chatReturning);
+            repositorioParticipante.save(p2);
+        }
+        return chatReturning;
+    }
+
+    @Transactional // Importante para asegurar la integridad
+    public List<Mensaje> marcarMensajesComoLeidos(Long chatId, Long lectorId) {
+
+        // 1. Buscamos los mensajes que están pendientes de leer
+        // Notar que pasamos EstadoMensaje.LEIDO como el estado que NO queremos
+        // (o sea, buscamos ENVIADO o ENTREGADO)
+        List<Mensaje> mensajesPendientes = repositorioMensaje.findByChatIdAndSenderIdNotAndEstadoNot(
+                chatId,
+                lectorId,
+                EstadoMensaje.LEIDO
+        );
+
+        if (mensajesPendientes.isEmpty()) {
+            return new ArrayList<>(); // No había nada nuevo
+        }
+
+        // 2. Actualizamos el estado en memoria
+        mensajesPendientes.forEach(msg -> msg.setEstado(EstadoMensaje.LEIDO));
+
+        // 3. Guardamos los cambios en la DB
+        // saveAll hace el update por nosotros
+        List<Mensaje> mensajesActualizados = repositorioMensaje.saveAll(mensajesPendientes);
+
+        // 4. Retornamos la lista para que el Controller/Socket pueda notificar
+        return mensajesActualizados;
+    }
+
+    public List<MensajeDTO> getMensajesPorChat(Long miId, Long chatId) throws Exception {
+        boolean esParticipante = repositorioParticipante.existsByChatIdAndUsuarioId(chatId,miId);
+        if(!esParticipante){
+            throw new Exception("El usuario no participa en ese chat");
+        }
+
+        List<Mensaje>mensajes =  repositorioMensaje.findAllByChatIdOrderBySentAtAsc(chatId);
+        return mensajes.stream().map(this::convertirADTO).collect(Collectors.toList());
+    }
+
+    public Mensaje findMensajeById(Long id){
+        return  repositorioMensaje.findById(id).get();
+    }
+     public Mensaje saveMensaje(Mensaje mensaje){
+        return repositorioMensaje.save(mensaje);
+    }
+}

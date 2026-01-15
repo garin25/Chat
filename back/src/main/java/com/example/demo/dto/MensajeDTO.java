@@ -1,0 +1,27 @@
+package com.example.demo.dto;
+
+import com.example.demo.entidades.enums.EstadoMensaje;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import lombok.Data;
+import java.time.LocalDateTime;
+
+@Data
+public class MensajeDTO {
+    private Long id;
+    private String contenido;
+    private LocalDateTime sentAt;
+
+    // En lugar de objetos completos, mandamos objetos simples o IDs
+    private Long chatId;
+    @Enumerated(EnumType.STRING)
+    private EstadoMensaje estado;
+    private SenderDTO sender; // Clase interna pequeña
+
+    @Data
+    public static class SenderDTO {
+        private Long id;
+        private String nombre;
+        private String avatarUrl;
+    }
+}
