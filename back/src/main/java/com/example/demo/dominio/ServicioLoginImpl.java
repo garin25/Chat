@@ -3,6 +3,7 @@ package com.example.demo.dominio;
 import com.example.demo.config.JwtUtil;
 import com.example.demo.dto.AuthRequest;
 import com.example.demo.dto.AuthResponse;
+import com.example.demo.dto.NewUsuarioDTO;
 import com.example.demo.entidades.Usuario;
 import com.example.demo.excepciones.*;
 import com.example.demo.infraestructura.RepositorioLogin;
@@ -29,23 +30,32 @@ public class ServicioLoginImpl {
     private JwtUtil jwtUtil;
 
     @Transactional // ¡Muy importante para que todo se guarde o nada se guarde!
-    public Usuario registrar(AuthRequest request) {
+    public Usuario registrar(NewUsuarioDTO dto) {
 
-        String hash = passwordEncoder.encode(request.getPassword());
+        String hash = passwordEncoder.encode(dto.getPassword());
 
         // 1. Validaciones
-        if (repositorioLogin.findByTelefono(request.getTelefono()).isPresent()) {
-            throw new EmailExistenteException("El usuario ya existe");
+        if (repositorioLogin.findByTelefono(dto.getTelefono()).isPresent()) {
+            throw new EmailExistenteException("El usuario con ese telefono ya existe");
         }
-        if (request.getPassword().length() < 6) {
+        if (dto.getPassword().length() < 6) {
             throw new ContraseniaCortaException("La contraseña debe tener al menos 6 caracteres");
         }
+        // si no hay nombre no tiro excepcion , para eso esta el @valid
+        String estado;
+        if(dto.getEstado()==null){
+             estado = "";
+        }else {
+            estado = dto.getEstado();
+        }
 
-        // 2. Preparar el Usuario
         Usuario newUser = new Usuario();
-        newUser.setTelefono(request.getTelefono());
-        String hashedPassword = passwordEncoder.encode(request.getPassword());
+        newUser.setTelefono(dto.getTelefono());
+        String hashedPassword = passwordEncoder.encode(dto.getPassword());
         newUser.setPassword(hashedPassword);
+        newUser.setNombre(dto.getNombre());
+        newUser.setEstado(estado);
+        newUser.setAvatarUrl("https://i.pravatar.cc/150?u="+dto.getNombre());
 
       return  repositorioLogin.save(newUser);
     }

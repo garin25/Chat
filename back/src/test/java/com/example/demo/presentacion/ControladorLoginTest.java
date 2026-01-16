@@ -7,6 +7,7 @@ import com.example.demo.dominio.UserDetailsService; // Mock necesario para Secur
 import com.example.demo.dto.AuthRequest;
 import com.example.demo.dto.AuthResponse;
 import com.example.demo.config.JwtUtil; // Mock necesario para Security
+import com.example.demo.dto.NewUsuarioDTO;
 import com.example.demo.entidades.Usuario;
 import com.example.demo.excepciones.ContraseniaCortaException;
 import com.example.demo.excepciones.ContraseniaIncorrectaException;
@@ -128,7 +129,7 @@ public class ControladorLoginTest {
         // Simulamos error de negocio (ej. email duplicado)
         // Nota: como 'registrar' devuelve void, usamos doThrow(...).when(...)
         // O si cambiaste el return, usa when(...).thenThrow(...)
-        when(servicioLogin.registrar(any(AuthRequest.class))) // Asumiendo que devuelve algo, si es void es distinto*
+        when(servicioLogin.registrar(any(NewUsuarioDTO.class))) // Asumiendo que devuelve algo, si es void es distinto*
                 .thenThrow(new EmailExistenteException("El usuario ya existe"));
 
 
@@ -147,7 +148,7 @@ public class ControladorLoginTest {
         // GIVEN
         AuthRequest request = new AuthRequest("123456789", "12345");
 
-        when(servicioLogin.registrar(any(AuthRequest.class))).thenThrow(new ContraseniaCortaException("La contraseña debe tener almenos 6 caracteres"));
+        when(servicioLogin.registrar(any(NewUsuarioDTO.class))).thenThrow(new ContraseniaCortaException("La contraseña debe tener almenos 6 caracteres"));
         // WHEN & THEN
         mockMvc.perform(post("/api/usuarios/registrar")
                         .contentType(MediaType.APPLICATION_JSON)

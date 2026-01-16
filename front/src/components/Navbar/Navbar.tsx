@@ -1,17 +1,55 @@
 import { useAuth } from '@/features/auth/AuthContext';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import './Navbar.css';
 
 function Navbar() {
-  const { logout } = useAuth();
+  const navigate = useNavigate();
+
+  const { logout, token } = useAuth();
+
+
+  //const isLogueado = !!localStorage.getItem('token'); 
+  const isLogueado = token ? true : false;
+  const handleLogout = () => {
+    logout();
+    navigate('/wsp/login'); // Redirigimos
+    // Opcional: window.location.reload() para limpiar estados de memoria
+  };
+
 
   return (
-    <nav style={{ display: 'flex', gap: '20px', padding: '10px', background: '#eee' }}>
-      <Link to="/tema">Temas</Link>
-      <Link to="/wsp">Wsp</Link>
-      <Link to="/wsp/login">Login Wsp</Link>
+    <nav className="navbar">
+      {/* IZQUIERDA: Logo y Links principales */}
+      <div className="nav-links">
+        {/*logo*/}
+        <Link to="/" className="nav-item" style={{ fontSize: '1.2rem', color: '#fff' }}>
+          ChatApp
+        </Link>
 
-      <button onClick={logout}>Salir</button>
+        {/* Solo mostrar link al chat si está logueado */}
+        {isLogueado && (
+          <Link to="/wsp" className="nav-item">Chat</Link>
+        )}
+
+        <Link to="/tema" className="nav-item">Temas</Link>
+      </div>
+
+      {/* DERECHA: Autenticación */}
+      <div className="nav-links">
+        {isLogueado ? (
+          // SI ESTÁ LOGUEADO: Ve el botón Salir
+          <button onClick={handleLogout} className="logout-btn">
+            Salir
+          </button>
+        ) : (
+          // NO ESTÁ LOGUEADO: Ve Login y Registro
+          <>
+            <Link to="/wsp/login" className="nav-item">Ingresar</Link>
+            <Link to="/wsp/registro" className="auth-btn">Registrarse</Link>
+          </>
+        )}
+      </div>
     </nav>
-  )
+  );
 }
 export default Navbar;

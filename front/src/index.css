@@ -51,7 +51,7 @@ body {
 .app-container {
   display: flex;        /* Pone la sidebar y el chat uno al lado del otro */
   width: 100vw;         /* Ancho total de la ventana */
-  height: 100vh;        /* Altura total de la ventana (CLAVE) */
+  height: calc(100vh - 70px);       /* Le resto el navbar */
   overflow: hidden;     /* Evita que aparezca scroll en toda la página */
   background-color: var(--bg-app);
 }
@@ -60,14 +60,13 @@ body {
    3. SIDEBAR Y LISTA DE CONTACTOS
    ========================================= */
 .sidebar {
-  width: 30%;           /* O 400px, lo que prefieras */
+  width: 30%;           
   max-width: 450px;
   min-width: 300px;
   border-right: 1px solid #2f3b43; /* Línea divisoria sutil */
   display: flex;
   flex-direction: column;
   background-color: var(--bg-sidebar);
-  overflow: scroll;
 }
 
 .sidebar-header {

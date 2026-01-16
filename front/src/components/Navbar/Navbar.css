@@ -1,0 +1,66 @@
+/* Navbar.css - Dark Mode */
+
+.navbar {
+  display: flex;
+  justify-content: space-between; /* Separa items a los extremos */
+  align-items: center;
+  padding: 0.8rem 2rem;
+  background-color: #202c33; /* Mismo color que la tarjeta de registro */
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  position: sticky; /* Se queda pegada arriba si haces scroll */
+  top: 0;
+  z-index: 1000;
+}
+
+/* Contenedor de links para agruparlos */
+.nav-links {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+}
+
+/* Estilo de los enlaces */
+.nav-item {
+  text-decoration: none;
+  color: #aebac1; /* Gris claro */
+  font-weight: 500;
+  font-size: 1rem;
+  transition: color 0.3s;
+}
+
+.nav-item:hover {
+  color: #00a884; /* Verde WhatsApp al pasar el mouse */
+}
+
+/* Botón de salir (destacado pero sutil) */
+.logout-btn {
+  background-color: transparent;
+  border: 1px solid #f15c6d; /* Borde rojo suave */
+  color: #f15c6d;
+  padding: 6px 15px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s;
+}
+
+.logout-btn:hover {
+  background-color: #f15c6d;
+  color: #111b21;
+}
+
+/* Botón de Login/Registro (estilo botón) */
+.auth-btn {
+  background-color: #00a884;
+  color: #111b21;
+  padding: 8px 16px;
+  border-radius: 20px;
+  text-decoration: none;
+  font-weight: bold;
+  font-size: 0.9rem;
+  transition: background 0.3s;
+}
+
+.auth-btn:hover {
+  background-color: #008f6f;
+}

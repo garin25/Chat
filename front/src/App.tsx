@@ -9,6 +9,7 @@ import ErrorFallback from './components/ui/ErrorFallback';
 import LoginWsp from './pages/LoginWsp';
 import { ProtectedRoute } from './components/routes/ProtectedRoute';
 import { Wsp } from './pages/Wsp';
+import Registro from './pages/Registro';
 
 
 function App() {
@@ -35,9 +36,9 @@ function App() {
           <Navbar />
 
           <Routes>
-            {/* RUTA PÚBLICA */}
-
+            {/* RUTAS PÚBLICAS */}
             <Route path="/wsp/login" element={<LoginWsp />} />
+            <Route path="/wsp/registro" element={<Registro />} />
 
             {/* RUTAS PRIVADAS (Protegidas por el guardia) */}
             <Route element={<ProtectedRoute />}>
@@ -49,6 +50,8 @@ function App() {
               <Route path="/wsp" element={<Wsp />} />
 
               <Route path="/wsp/login" element={<LoginWsp />} />
+
+              <Route path="/wsp/registro" element={<Registro />} />
 
             </Route>
           </Routes>

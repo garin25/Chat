@@ -1,7 +1,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useNavigate } from "react-router-dom"; 
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/features/auth/AuthContext";
 
 // 1. OPTIMIZACIÓN: El esquema va AFUERA del componente
@@ -36,13 +36,13 @@ function LoginForm() {
             if (response.ok) {
                 // 2. EXTRAER EL TOKEN
                 // Asumo que tu backend devuelve un JSON así: { "token": "eyJhbG..." }
-                const jsonResponse = await response.json(); 
-                
+                const jsonResponse = await response.json();
+
                 // 3. USAR EL CONTEXTO
                 // Al llamar a login(), el AuthContext guarda el token en localStorage
                 // y actualiza el estado de toda la app.
-                login(jsonResponse.token,jsonResponse.user); 
-        
+                login(jsonResponse.token, jsonResponse.user);
+
                 // 4. REDIRECCIÓN 
                 navigate("/wsp")
 
@@ -57,20 +57,29 @@ function LoginForm() {
     };
 
     return (
-        <form onSubmit={handleSubmit(onSubmit)} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            <div>
-                <label>Telefono:</label>
-                <input type="text" {...register("telefono")} />
-                {errors.telefono && <span style={{ color: "red" }}>{errors.telefono.message}</span>}
-            </div>
-            <div>
-                <label>Password:</label>
-                <input type="password" {...register("password")} />
-                {errors.password && <span style={{ color: "red" }}>{errors.password.message}</span>}
-            </div>
+        <div className="auth-container">
+            <div className="auth-card">
+                <h2 className="auth-title">Iniciar Sesión</h2>
+                <form onSubmit={handleSubmit(onSubmit)}  className="auth-form">
+                    <div className="form-group">
+                        <label>Telefono:</label>
+                        <input type="text"  className="form-input" {...register("telefono")} />
+                        {errors.telefono && <span className="error-msg">{errors.telefono.message}</span>}
+                    </div>
+                    <div className="form-group">
+                        <label>Password:</label>
+                        <input type="password"  className="form-input" {...register("password")} />
+                        {errors.password && <span className="error-msg">{errors.password.message}</span>}
+                    </div>
 
-            <button type="submit">Login</button>
-        </form>
+                    <button type="submit" className="submit-btn">Login</button>
+                    <div className="auth-footer">
+                    ¿No tenés cuenta? 
+                    <Link to="/wsp/registro" className="auth-link">Registro</Link>
+                </div>
+                </form>
+            </div>
+        </div>
     );
 }
 

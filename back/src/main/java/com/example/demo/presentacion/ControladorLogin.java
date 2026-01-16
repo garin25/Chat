@@ -3,6 +3,7 @@ package com.example.demo.presentacion;
 import com.example.demo.dominio.ServicioLoginImpl;
 import com.example.demo.dto.AuthRequest;
 import com.example.demo.dto.AuthResponse;
+import com.example.demo.dto.NewUsuarioDTO;
 import com.example.demo.entidades.Usuario;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,8 +12,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @RestController
-@RequestMapping("/api/usuarios") // Una buena práctica es agrupar rutas
+@RequestMapping("/api/usuarios")
 public class ControladorLogin {
 
     @Autowired
@@ -20,24 +23,21 @@ public class ControladorLogin {
 
     // POST /api/usuarios/registrar
     @PostMapping("/registrar")
-    public ResponseEntity<String> registrar(@RequestBody @Valid AuthRequest request) {
-        // 1. Llamamos al servicio.
+    public ResponseEntity<?> registrar(@RequestBody @Valid NewUsuarioDTO dto) {
         // Si el usuario existe, el servicio lanza ExcepcionDeNegocio
         // y el GlobalExceptionHandler devuelve el 400 automáticamente.
-        servicioLogin.registrar(request);
+        servicioLogin.registrar(dto);
 
-        // 2. Si llegamos acá, es que todo salió bien (Happy Path)
-        return new ResponseEntity<>("Usuario registrado exitosamente", HttpStatus.CREATED);
+        return ResponseEntity.status(HttpStatus.CREATED).body(
+                Map.of("mensaje", "Usuario registrado exitosamente")
+        );
     }
 
     // POST /api/usuarios/login
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@RequestBody @Valid AuthRequest request) {
-        // 1. Llamamos al servicio.
         // Si la pass está mal, lanza ExcepcionDeAutenticacion -> 401 automático.
         AuthResponse token = servicioLogin.loginWsp(request);
-
-        // 2. Devolvemos el token con estado 200 OK
         return ResponseEntity.ok(token);
     }
 
