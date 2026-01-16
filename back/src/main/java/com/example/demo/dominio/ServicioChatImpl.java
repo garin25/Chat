@@ -1,6 +1,7 @@
 package com.example.demo.dominio;
 
 import com.example.demo.dto.*;
+import com.example.demo.dto.mappers.MensajeMapper;
 import com.example.demo.entidades.*;
 import com.example.demo.entidades.enums.EstadoMensaje;
 import com.example.demo.excepciones.OperacionInvalidaException;
@@ -30,6 +31,9 @@ public class ServicioChatImpl {
     private RepositorioParticipante repositorioParticipante;
     @Autowired
     private RepositorioMensaje repositorioMensaje;
+    @Autowired
+    private MensajeMapper mensajeMapper;
+
 
     public List<ChatSidebarDTO> getSidebarChats(Long miId) {
         List<ChatSidebarDTO> respuesta = new ArrayList<>();
@@ -87,7 +91,7 @@ public class ServicioChatImpl {
         List<Mensaje> mensajes = repositorioChat.getMensajesParaElNum(miId);
 
         // Convertimos la lista de Entidades a DTOs
-        return mensajes.stream().map(this::convertirADTO).collect(Collectors.toList());
+        return mensajeMapper.toDtoList(mensajes);
     }
 
     private MensajeDTO convertirADTO(Mensaje m) {
@@ -177,8 +181,7 @@ public class ServicioChatImpl {
        /*   Ya esta @Valid en los DTO
        if(body.getNombreGrupo()==null){
             throw new Exception("El nombre del grupo es obligatorio");
-        }
-        */
+     }*/
         // Este lo dejo por si pasan una lista vacia
         if(body.getIntegrantes().isEmpty()){
             throw new RecursoNoEncontradoException("Los integrantes son obligatorios");
