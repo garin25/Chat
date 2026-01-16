@@ -1,5 +1,6 @@
 package com.example.demo.presentacion;
 
+import com.example.demo.config.UsuarioAutenticado;
 import com.example.demo.dominio.ServicioChatImpl;
 import com.example.demo.dominio.ServicioLoginImpl;
 import com.example.demo.dto.*;
@@ -36,23 +37,20 @@ public class ControladorChat {
 
     // GET /api/chats
     @GetMapping("/sidebar")
-    public ResponseEntity<List<ChatSidebarDTO>> getSidebar(Authentication authentication) {
-        Usuario yo = getUsuarioLogueado(authentication);
+    public ResponseEntity<List<ChatSidebarDTO>> getSidebar(@UsuarioAutenticado Usuario yo) {
         Long miId = yo.getId();
         return ResponseEntity.ok(servicioChat.getSidebarChats(miId));
     }
 
     @GetMapping("/all")
-    public ResponseEntity<List<MensajeDTO>> getMensajesParaElNum(Authentication authentication) {
-        Usuario yo = getUsuarioLogueado(authentication);
+    public ResponseEntity<List<MensajeDTO>> getMensajesParaElNum(@UsuarioAutenticado Usuario yo) {
         Long miId = yo.getId();
         return ResponseEntity.ok(servicioChat.getMensajesParaElNum(miId));
     }
 
     @GetMapping("/{chatId}/messages")
-    public ResponseEntity<List<MensajeDTO>> getMensajesPorChat(Authentication authentication,
+    public ResponseEntity<List<MensajeDTO>> getMensajesPorChat(@UsuarioAutenticado Usuario yo,
                                                                @PathVariable("chatId") Long chatId) {
-        Usuario yo = getUsuarioLogueado(authentication);
         Long miId = yo.getId();
 
         return ResponseEntity.ok(servicioChat.getMensajesPorChat(miId, chatId));
@@ -63,10 +61,9 @@ public class ControladorChat {
     public ResponseEntity<NotificacionDTO> enviarAlChat( // Retornamos DTO también en HTTP
                                                          @PathVariable("chatId") Long chatId,
                                                          @RequestBody Map<String, String> payload,
-                                                         Authentication authentication
+                                                         @UsuarioAutenticado Usuario yo
     ) {
         String contenido = payload.get("contenido");
-        Usuario yo = getUsuarioLogueado(authentication);
         Long miId = yo.getId();
         Mensaje mensajeGuardado = servicioChat.enviarAlChat(miId, chatId, contenido);
 
@@ -117,28 +114,25 @@ public class ControladorChat {
     @PostMapping("/new")
     public ResponseEntity<?> agendarContacto(
             @RequestBody @Valid NewContactDTO body,
-            Authentication authentication
+            @UsuarioAutenticado Usuario yo
     ) {
-        Usuario yo = getUsuarioLogueado(authentication);
         return ResponseEntity.ok(servicioChat.agendarContacto(yo, body));
     }
 
     @PostMapping("/group")
     public ResponseEntity<?> crearGrupo(
             @RequestBody @Valid NewGroupDTO body,
-            Authentication authentication
+            @UsuarioAutenticado Usuario yo
     ) {
-        Usuario yo = getUsuarioLogueado(authentication);
         return ResponseEntity.ok(servicioChat.crearGrupo(yo, body));
     }
 
 
     @PostMapping("/{chatId}/leido")
     public ResponseEntity<String> marcarMensajesComoLeidos(
-            Authentication authentication,
+            @UsuarioAutenticado Usuario yo,
             @PathVariable Long chatId
     ) {
-        Usuario yo = getUsuarioLogueado(authentication);
         servicioChat.marcarMensajesComoLeidos(chatId, yo.getId());
         return ResponseEntity.ok("Mensaje leido correctamente");
     }
@@ -160,12 +154,9 @@ public class ControladorChat {
     }
 
     @MessageMapping("/chat/mark-as-read")
-    public void marcarChatComoLeido(@Payload Map<String, Long> payload, Principal user) {
+    public void marcarChatComoLeido(@Payload Map<String, Long> payload,
+                                    @UsuarioAutenticado Usuario lector) {
         Long chatId = payload.get("chatId");
-        String telefonoLector = user.getName();
-        Usuario lector = servicioLogin.findByTelefono(telefonoLector)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado")); // Obtener ID del usuario actual desde Principal
-
         // 1. Lógica de Negocio (Servicio)
         // "Buscar todos los mensajes en este chat enviados por EL OTRO
         // que todavía no estén en estado LEIDO y pasarlos a LEIDO"
@@ -181,15 +172,6 @@ public class ControladorChat {
                     new EstadoMensajeDTO(msg.getId(), EstadoMensaje.LEIDO)
             );
         }
-    }
-
-    // antes hacia esto new RuntimeException("Usuario no encontrado (Teléfono incorrecto en Token)")); LOS TESTS CAPAZ FALLAN
-    private Usuario getUsuarioLogueado(Authentication authentication) {
-        // 1. Spring Security devuelve el "subject" del token.
-        // Si generaste el token con el teléfono, esto devuelve el string del teléfono.
-        String telefono = authentication.getName();
-        return servicioLogin.findByTelefono(telefono)
-                .orElseThrow(() -> new RecursoNoEncontradoException("El usuario logueado no existe en la DB"));
     }
 
 }
