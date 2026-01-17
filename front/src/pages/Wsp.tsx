@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useChatConnection, useChatMessages } from "@/features/chat/hooks"; 
+import { useChatConnection, useChatMessages } from "@/features/chat/hooks";
 import { useGroupManagement } from "@/features/groups/hooks/useGroupManagement";
 import { GroupCreationFooter } from "@/features/groups/components/GroupCreationFooter";
 import { SidebarHeader } from "@/components/layout/SidebarHeader";
@@ -20,7 +20,7 @@ export const Wsp = () => {
 
   // 2. Hooks de Chat (Feature: Chat)
   const { clientRef, isConnected } = useChatConnection(`${API_URL}/ws`, token);
-  
+
   const {
     listaDeContactos,
     historialDeMensajes,
@@ -43,16 +43,30 @@ export const Wsp = () => {
     cancelarCreacion
   } = useGroupManagement(recargarContactos);
 
+  // Función para el botón "Volver"
+  const handleVolver = () => {
+    // Necesitas una forma de setear null. 
+    // Si seleccionarChat solo acepta number, crea una funcion setChatSeleccionado(null) en tu hook
+    // O pasa null si tu tipado lo permite.
+    seleccionarChat(null);
+  };
+
+  // Clases dinámicas para Mobile
+  // Si hay chat seleccionado -> 'mobile-hidden' se aplica al Sidebar
+  // Si NO hay chat seleccionado -> 'mobile-hidden' se aplica al Chat
+  const sidebarClass = idChatSeleccionado ? "sidebar mobile-hidden" : "sidebar";
+  const chatClass = idChatSeleccionado ? "chat-container" : "chat-container mobile-hidden";
+
   if (!isConnected) return <div className="loading">Conectando al servidor...</div>;
 
   return (
     <div className="app-container">
-      
+
       {/* --- PANEL IZQUIERDO (SIDEBAR) --- */}
-      <div className="sidebar">
-        <SidebarHeader 
-            onNewContact={() => setIsOpenModalContact(true)}
-            onNewGroup={() => setIsOpenModalGroup(true)}
+      <div className={sidebarClass}>
+        <SidebarHeader
+          onNewContact={() => setIsOpenModalContact(true)}
+          onNewGroup={() => setIsOpenModalGroup(true)}
         />
 
         <ListaDeContactos
@@ -65,22 +79,27 @@ export const Wsp = () => {
 
         {/* Renderizado Condicional Limpio */}
         {isCreandoGrupo && (
-          <GroupCreationFooter 
-             count={seleccionados.length}
-             onConfirm={confirmarCrearGrupo}
-             onCancel={cancelarCreacion}
+          <GroupCreationFooter
+            count={seleccionados.length}
+            onConfirm={confirmarCrearGrupo}
+            onCancel={cancelarCreacion}
           />
         )}
       </div>
 
       {/* --- PANEL DERECHO (CHAT) --- */}
-      <div className="chat-container">
-        <ChatActivo
-          enviarMensaje={enviarMensaje}
-          idChatSeleccionado={idChatSeleccionado}
-          mensajesDelChat={historialDeMensajes}
-          headerContactSelected={headerContactSelected}
-        />
+      <div className={chatClass}>
+        {idChatSeleccionado ? (
+          <ChatActivo
+            enviarMensaje={enviarMensaje}
+            idChatSeleccionado={idChatSeleccionado}
+            mensajesDelChat={historialDeMensajes}
+            headerContactSelected={headerContactSelected}
+            onBack={handleVolver}
+          />
+        ) : (
+          <div className="placeholder-desktop">Selecciona un chat</div>
+        )}
       </div>
 
       {/* --- MODALES --- */}
@@ -89,14 +108,14 @@ export const Wsp = () => {
         onClose={() => setIsOpenModalContact(false)}
         onContactAdded={recargarContactos}
       />
-      
-      <ModalNewGroup 
-       onContinuar={(nombre) => {
-            console.log("Nombre grupo:", nombre); // Opcional
-            iniciarCreacion(); // <--- ESTO ACTIVA LOS CHECKBOXES
+
+      <ModalNewGroup
+        onContinuar={(nombre) => {
+          console.log("Nombre grupo:", nombre); // Opcional
+          iniciarCreacion(); // <--- ESTO ACTIVA LOS CHECKBOXES
         }}
-        isOpen={isOpenModalGroup} 
-        onClose={() => setIsOpenModalGroup(false)} 
+        isOpen={isOpenModalGroup}
+        onClose={() => setIsOpenModalGroup(false)}
       />
     </div>
   );

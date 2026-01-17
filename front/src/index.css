@@ -61,7 +61,6 @@ body {
    ========================================= */
 .sidebar {
   width: 30%;           
-  max-width: 450px;
   min-width: 300px;
   border-right: 1px solid #2f3b43; /* Línea divisoria sutil */
   display: flex;
@@ -194,16 +193,11 @@ body {
    ========================================= */
 
 /* Contenedor que envuelve al componente ChatActivo */
-.chat-container {       
-  flex: 1;              /* MAGIA: "Toma todo el ancho que sobre a la derecha" */
-  display: flex;        /* Para poder estirar el hijo */
-  height: 100%;         /* Respeta la altura del padre */
-  min-width: 0;         /* Truco técnico para evitar desbordes en flexbox */
-  background-color: #0b141a; 
-  /* Patrón de fondo opcional */
-  background-image: url("https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png");
-  background-blend-mode: overlay;
-  opacity: 0.95; /* Ajuste sutil del fondo */
+.chat-container {
+    width: 70%; /* El resto del espacio */
+    background-color: #0b141a; /* Color de fondo WhatsApp */
+    display: flex;
+    flex-direction: column;
 }
 
 /* El componente ChatActivo en sí mismo */
@@ -294,6 +288,23 @@ body {
 }
 .chat-input-area button:hover {
     color: var(--text-primary);
+}
+
+/* Por defecto (Desktop), el botón volver no se ve */
+.btn-back {
+    display: none;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    margin-right: 10px;
+}
+
+/* En Mobile, lo mostramos */
+@media (max-width: 768px) {
+    .btn-back {
+        display: block;
+    }
 }
 
 /*NOTIFICACIONES*/
@@ -402,4 +413,24 @@ input::placeholder {
   font-size: 0.9rem;
   margin-bottom: 5px;
   display: block;
+}
+
+
+/* --- MOBILE (Pantallas menores a 768px) --- */
+@media (max-width: 768px) {
+    
+    .sidebar, .chat-container {
+        width: 100%; /* Ocupan todo el ancho */
+        height: 100%;
+    }
+
+    /* La clase que oculta elementos */
+    .mobile-hidden {
+        display: none !important;
+    }
+    
+    /* Ajustes opcionales para quitar márgenes en mobile */
+    .app-container {
+        padding: 0;
+    }
 }

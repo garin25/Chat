@@ -9,15 +9,21 @@ interface ChatProps {
     idChatSeleccionado: number | null,
     enviarMensaje: (nuevoTexto: MessageFront) => void,
     mensajesDelChat: Message[] | null,
-    headerContactSelected: HeaderContactSelected | null
+    headerContactSelected: HeaderContactSelected | null,
+    onBack: () => void
 }
-export const ChatActivo = ({ idChatSeleccionado, enviarMensaje, mensajesDelChat, headerContactSelected }: ChatProps) => {
+export const ChatActivo = ({ idChatSeleccionado, enviarMensaje, mensajesDelChat, headerContactSelected, onBack }: ChatProps) => {
     const { user } = useAuth();
     return (
 
         <div className="chat-window">
             {headerContactSelected != null && (<div className="contact-item">
                 <div className="contact-content" style={{ display: 'flex', alignItems: 'center', flex: 1 }}>
+
+                    <button className="btn-back mobile-only" onClick={onBack}>
+                        ⬅
+                    </button>
+                    
                     <img
                         src={headerContactSelected?.avatar_url}
                         alt="Avatar"

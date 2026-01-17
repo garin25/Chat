@@ -213,7 +213,15 @@ export const useChatMessages = (
 
     // --- 5. ACCIONES (API PÚBLICA DEL HOOK) ---
 
-    const seleccionarChat = (chatId: number) => {
+    const seleccionarChat = (chatId: number|null) => {
+
+        // 2. Si es null, limpiamos el estado y salimos (Early Return)
+        if (chatId === null) {
+            setIdChatSeleccionado(null);
+            setHeaderContactSelected(null); // Opcional: limpiar header también
+            return; // salimos del metodo
+        }
+
         setIdChatSeleccionado(chatId);
 
         // Actualización optimista de la lista (borrar contador rojo)
