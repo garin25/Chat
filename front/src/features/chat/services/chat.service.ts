@@ -39,6 +39,8 @@ export const ChatService = {
                 body: JSON.stringify(data),
             });
 
+            console.log({response});
+
 
         } catch (error) {
             console.error("Error de red:", error);
@@ -57,7 +59,7 @@ export const ChatService = {
                     'Authorization': `Bearer ${token}`
                 }
             });
-
+             console.log({response});
 
         } catch (error) {
             console.error("Error de red:", error);
