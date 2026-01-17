@@ -1,4 +1,3 @@
-import React from 'react';
 import './Mensaje.css'; 
 
 interface MensajeProps {

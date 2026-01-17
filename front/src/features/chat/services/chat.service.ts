@@ -1,5 +1,5 @@
-import type { NewContactFormValues } from "../components/Modals/ModalNewContact/ModalNewContact";
-import type { NuevoGrupo } from "../interfaces/nuevoGrupo.interface";
+import type { NewContactFormValues } from "@/features/groups/components/ModalNewContact";
+import type { NuevoGrupo } from "@/interfaces/nuevoGrupo.interface";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
 
@@ -16,6 +16,8 @@ export const ChatService = {
                 },
                 body: JSON.stringify(data),
             });
+
+            console.log(response); // para que no se queje en deploy
 
 
         } catch (error) {

@@ -1,5 +1,5 @@
-import { useState, type ChangeEvent } from "react";
-import type { MessageFront } from "../../interfaces/messageFront.interface";
+import { useState} from "react";
+import type { MessageFront } from "../interfaces/messageFront.interface";
 
 interface InputProps {
     enviarMensaje: (nuevoTexto: MessageFront) => void,

@@ -13,6 +13,7 @@ import com.example.demo.excepciones.ContraseniaCortaException;
 import com.example.demo.excepciones.ContraseniaIncorrectaException;
 import com.example.demo.excepciones.EmailExistenteException;
 import com.example.demo.excepciones.EmailNoExistenteException;
+import com.example.demo.infraestructura.RepositorioLogin;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,6 +41,10 @@ public class ControladorLoginTest {
 
     @MockitoBean
     private ServicioLoginImpl servicioLogin;
+
+    @MockitoBean
+    private RepositorioLogin repositorioLogin;
+
 
     // Mocks necesarios para que Spring Security arranque
     @MockitoBean
@@ -124,11 +129,8 @@ public class ControladorLoginTest {
     @Test
     void registrar_deberiaRetornar400_cuandoUsuarioYaExiste() throws Exception {
         // GIVEN
-        AuthRequest request = new AuthRequest("123456789", "123456");
+        NewUsuarioDTO dto = new NewUsuarioDTO("123456789","Yo","contrasenia","estado");
 
-        // Simulamos error de negocio (ej. email duplicado)
-        // Nota: como 'registrar' devuelve void, usamos doThrow(...).when(...)
-        // O si cambiaste el return, usa when(...).thenThrow(...)
         when(servicioLogin.registrar(any(NewUsuarioDTO.class))) // Asumiendo que devuelve algo, si es void es distinto*
                 .thenThrow(new EmailExistenteException("El usuario ya existe"));
 
@@ -136,7 +138,7 @@ public class ControladorLoginTest {
         // WHEN & THEN
         mockMvc.perform(post("/api/usuarios/registrar")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request))
+                        .content(objectMapper.writeValueAsString(dto))
                         .with(csrf()))
                 .andExpect(status().isBadRequest()) // Esperamos 400
                 .andExpect(jsonPath("$.mensaje").value("El usuario ya existe"));
@@ -146,13 +148,13 @@ public class ControladorLoginTest {
     @Test
     void registrar_deberiaRetornar400_cuandoLaContraseniaEsCorta() throws Exception {
         // GIVEN
-        AuthRequest request = new AuthRequest("123456789", "12345");
+        NewUsuarioDTO dto = new NewUsuarioDTO("123456789","Yo","12345","estado");
 
         when(servicioLogin.registrar(any(NewUsuarioDTO.class))).thenThrow(new ContraseniaCortaException("La contraseña debe tener almenos 6 caracteres"));
         // WHEN & THEN
         mockMvc.perform(post("/api/usuarios/registrar")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request))
+                        .content(objectMapper.writeValueAsString(dto))
                         .with(csrf()))
                 .andExpect(status().isBadRequest()) // Esperamos 400
                 .andExpect(jsonPath("$.mensaje").value("La contraseña debe tener almenos 6 caracteres"));

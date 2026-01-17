@@ -1,4 +1,4 @@
-import type { TypeContacto } from "../../interfaces/contacto.interface"
+import type { TypeContacto } from "../interfaces/contacto.interface";
 
 interface ListaProps {
   listaDeContactos: TypeContacto[]

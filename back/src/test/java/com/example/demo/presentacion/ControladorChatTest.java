@@ -9,6 +9,7 @@ import com.example.demo.dto.NewGroupDTO;
 import com.example.demo.entidades.Usuario;
 import com.example.demo.excepciones.OperacionInvalidaException;
 import com.example.demo.excepciones.RecursoRepetidoException;
+import com.example.demo.infraestructura.RepositorioLogin;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -55,6 +56,8 @@ class ControladorChatTest {
     private SimpMessagingTemplate messagingTemplate;
     @Autowired
     private ObjectMapper objectMapper;
+    @MockitoBean
+    private RepositorioLogin repositorioLogin;
 
     @Test
     @WithMockUser(username = "1155556666")
@@ -71,7 +74,8 @@ class ControladorChatTest {
         Mockito.when(servicioLogin.findByTelefono("1155556666"))
                 .thenReturn(Optional.empty());
         // O si tu servicio ya lanza la excepción: .thenThrow(new RecursoNoEncontradoException("..."));
-
+        Mockito.when(repositorioLogin.findByTelefono("1155556666"))
+                .thenReturn(Optional.empty());
         // WHEN & THEN
         mockMvc.perform(post("/api/chats/new")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -80,7 +84,7 @@ class ControladorChatTest {
                 // Verificamos status 404 (Not Found)
                 .andExpect(status().isNotFound())
                 // Verificamos que el JSON tenga el mensaje correcto
-                .andExpect(jsonPath("$.mensaje").value("El usuario logueado no existe en la DB"));
+                .andExpect(jsonPath("$.mensaje").value("Usuario no encontrado"));
     }
     @Test
     @WithMockUser(username = "1155556666")
@@ -95,6 +99,9 @@ class ControladorChatTest {
 
         // Login OK
         Mockito.when(servicioLogin.findByTelefono("1155556666")).thenReturn(Optional.of(yo));
+
+        Mockito.when(repositorioLogin.findByTelefono("1155556666"))
+                .thenReturn(Optional.of(yo));
 
         // MOCK DEL ERROR: Usamos la excepción específica
         Mockito.when(servicioChat.agendarContacto(any(), any()))
@@ -121,6 +128,9 @@ class ControladorChatTest {
 
         Usuario yo = new Usuario(); yo.setId(1L); yo.setTelefono("1155556666");
         Mockito.when(servicioLogin.findByTelefono("1155556666")).thenReturn(Optional.of(yo));
+        Mockito.when(repositorioLogin.findByTelefono("1155556666"))
+                .thenReturn(Optional.of(yo));
+
 
         // 2. MOCK: Simulamos que, aunque los datos tienen formato correcto,
         // el servicio decide rechazarlo (Lógica de Negocio)
