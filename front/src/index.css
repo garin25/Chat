@@ -69,15 +69,48 @@ body {
 }
 
 .sidebar-header {
-  padding: 10px 16px;
-  background-color: var(--bg-card); /* Cabecera un poco más clara */
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  height: 60px;
-  flex-shrink: 0;
+    display: flex;
+    justify-content: space-between; /* Uno a cada punta */
+    align-items: center;
+    padding: 10px 16px;
+     background-color: var(--bg-card);
+     height: 60px;
+}
+/* Título */
+.header-title {
+    margin: 0;
+    font-size: 22px;
+    font-weight: bold;
+    color: #111b21;
+    color: #008069;
 }
 
+/* Contenedor de Botones (para que no se separen entre sí) */
+.header-actions {
+    display: flex;
+    gap: 15px; /* Espacio entre el botón de contacto y el de grupo */
+}
+
+/* Estilo de los Botones (Círculos sin borde) */
+.icon-btn {
+    background: transparent;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 50%; /* Redondos */
+    color: #54656f;
+    color:#008069;
+    transition: background-color 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.icon-btn:hover {
+    background-color: rgba(0, 0, 0, 0.05); /* Gris suave al pasar mouse */
+    color: #111b21;
+}
 .lista-contactos {
   flex: 1;              /* Ocupa el espacio restante */
   overflow-y: auto;     /* Scroll interno */
@@ -292,6 +325,7 @@ body {
 
 /* Por defecto (Desktop), el botón volver no se ve */
 .btn-back {
+    color: white;
     display: none;
     background: none;
     border: none;
@@ -402,19 +436,75 @@ input::placeholder {
   border: 1px solid #2f3b43;
 }
 
-.modal-content h2 {
-  margin-bottom: 20px;
-  color: var(--text-primary);
-  text-align: center;
+/* --- Estilos Generales del Formulario --- */
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 15px; /* Espacio entre inputs */
+    text-align: left; /* Alinea etiquetas a la izquierda */
 }
 
-.modal-content label {
-  color: var(--text-secondary);
-  font-size: 0.9rem;
-  margin-bottom: 5px;
-  display: block;
+.form-label {
+    font-size: 14px;
+    color: #54656f; /* Gris oscuro WhatsApp */
+    font-weight: 500;
 }
 
+.form-input {
+    padding: 10px 12px;
+    border: 1px solid #dfe1e5;
+    border-radius: 6px;
+    font-size: 16px;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.form-input:focus {
+    border-color: #00a884; /* Verde WhatsApp al hacer click */
+    box-shadow: 0 0 0 2px rgba(0, 168, 132, 0.1);
+}
+
+/* --- Botones --- */
+.modal-actions {
+    display: flex;
+    justify-content: flex-end; /* Botones a la derecha */
+    gap: 12px;
+    margin-top: 20px;
+}
+
+.btn {
+    padding: 10px 20px;
+    border-radius: 24px; /* Bordes redondeados modernos */
+    border: none;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+/* Botón "Cancelar" */
+.btn-secondary {
+    background-color: transparent;
+    color: #008069;
+    border: 1px solid transparent;
+}
+.btn-secondary:hover {
+    background-color: #f0f2f5;
+}
+
+/* Botón "Confirmar" (Agendar/Continuar) */
+.btn-primary {
+    background-color: #008069; /* Verde WhatsApp */
+    color: white;
+}
+.btn-primary:hover {
+    background-color: #017561;
+}
+.btn-primary:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+}
 
 /* --- MOBILE (Pantallas menores a 768px) --- */
 @media (max-width: 768px) {

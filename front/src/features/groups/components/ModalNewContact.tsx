@@ -62,33 +62,32 @@ export const ModalNewContact = ({ isOpen, onClose, onContactAdded }: ModalProps)
 
 
     return (
-        <div className="modal-overlay" style={overlayStyle}> {/* Estilo básico para centrar */}
-            <div className="modal-content" style={modalStyle}>
+        <div className="modal-overlay" >
+            <div className="modal-content">
                 <h2>Nuevo Contacto</h2>
 
-                <form onSubmit={handleSubmit(onSubmit)} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                    <div>
-                        <label>Nombre (Alias): </label>
-                        <input type="text" {...register("nombre")} />
+                <form onSubmit={handleSubmit(onSubmit)}>
+
+                    <div className="form-group">
+                        <label className="form-label">Nombre (Alias):</label>
+                        <input className="form-input" type="text" {...register("nombre")} />
                         {errors.nombre && <small style={{ color: "red" }}>{errors.nombre.message}</small>}
                     </div>
 
-                    <div>
-                        <label>Teléfono:</label>
-                        {/* Usamos type="text" para que el regex de Zod valide, type="number" a veces molesta */}
-                        <input type="text" placeholder="1122334455" {...register("telefono")} />
+                    <div className="form-group">
+                        <label className="form-label">Teléfono:</label>
+                        <input className="form-input" type="text" placeholder="1122334455" {...register("telefono")} />
                         {errors.telefono && <small style={{ color: "red" }}>{errors.telefono.message}</small>}
                     </div>
 
-                    {/* Mensaje de error del servidor */}
-                    {serverError && <div style={{ color: "red", fontWeight: "bold" }}>{serverError}</div>}
+                    {serverError && <div style={{ color: "red", fontWeight: "bold", marginBottom: 10 }}>{serverError}</div>}
 
-                    <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
-                        <button type="button" onClick={onClose} disabled={isSubmitting}>
+                    <div className="modal-actions">
+                        <button type="button" className="btn btn-secondary" onClick={onClose} disabled={isSubmitting}>
                             Cancelar
                         </button>
 
-                        <button type="submit" disabled={isSubmitting}>
+                        <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
                             {isSubmitting ? "Guardando..." : "Agendar"}
                         </button>
                     </div>
@@ -98,12 +97,3 @@ export const ModalNewContact = ({ isOpen, onClose, onContactAdded }: ModalProps)
     )
 
 }
-
-// Estilos rápidos para que parezca un modal (luego muévelos a CSS)
-const overlayStyle: React.CSSProperties = {
-    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center'
-};
-const modalStyle: React.CSSProperties = {
-    backgroundColor: 'white', padding: '20px', borderRadius: '8px', minWidth: '300px'
-};
