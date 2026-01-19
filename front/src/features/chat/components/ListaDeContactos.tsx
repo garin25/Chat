@@ -20,7 +20,7 @@ export const ListaDeContactos = ({ listaDeContactos, seleccionarChat, creandoGru
         return (
           <div
             key={item.chat_id || item.usuario_id}
-            className={`contact-item ${estaSeleccionado ? 'selected' : ''}`} // Clase visual extra
+            className={`contact-item ${estaSeleccionado && !creandoGrupo ? 'selected' : ''}`} // Clase visual extra
 
             // Lógica Central: Un solo onClick que decide qué hacer
             onClick={() => {
@@ -38,7 +38,7 @@ export const ListaDeContactos = ({ listaDeContactos, seleccionarChat, creandoGru
             }}
           >
             {/* 1. EL INPUT CONDICIONAL */}
-            {creandoGrupo && (
+            {creandoGrupo && item.usuario_id!=null && (
               <div className="checkbox-container">
                 <input
                   type="checkbox" // Uso checkbox para permitir grupos de varias personas
