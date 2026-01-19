@@ -10,6 +10,9 @@ interface MensajeProps {
 
 export const Mensaje = ({ contenido, nombre, esMio, estado,sentAt }: MensajeProps) => {
 
+const fecha = new Date(sentAt);
+const hora = fecha.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
     // Función helper para renderizar el ícono según el estado
     const renderStatusIcon = (estadoActual: string) => {
         switch (estadoActual) {
@@ -36,7 +39,7 @@ export const Mensaje = ({ contenido, nombre, esMio, estado,sentAt }: MensajeProp
                 
                 {/* Bloque de Metadatos (Hora y Estado) */}
                 <div className="mensaje-meta">
-                    <small>{sentAt}</small>
+                    <small>{hora}</small>
                     {/* El estado SOLO se muestra si el mensaje es mío */}
                     {esMio && (
                         <span className="estado-ticks">

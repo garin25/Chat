@@ -251,6 +251,7 @@ body {
   flex-direction: column;
   gap: 4px;
   min-height: 0;          /* TRUCO IMPORTANTE para que el scroll funcione en Flexbox */
+  scroll-behavior: smooth;
 }
 
 /* Estilos de las Burbujas */

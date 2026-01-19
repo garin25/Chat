@@ -4,6 +4,7 @@ import type { Message } from "../interfaces/message.interface";
 import type { MessageFront } from "../interfaces/messageFront.interface";
 import { InputMessage } from "./InputMessage"
 import { Mensaje } from "./Mensaje"
+import { useEffect, useRef } from "react";
 
 interface ChatProps {
     idChatSeleccionado: number | null,
@@ -14,6 +15,21 @@ interface ChatProps {
 }
 export const ChatActivo = ({ idChatSeleccionado, enviarMensaje, mensajesDelChat, headerContactSelected, onBack }: ChatProps) => {
     const { user } = useAuth();
+    const messagesEndRef = useRef<HTMLDivElement>(null);
+
+    // 2. FUNCIÓN PARA SCROLLEAR AL FONDO
+    const scrollToBottom = (instantaneo = false) => {
+        // Si es instantáneo (al abrir el chat), usamos 'auto' para que no maree
+        // Si es un mensaje nuevo, usamos 'smooth' para que se vea bonito
+        const behavior = instantaneo ? "auto" : "smooth";
+        messagesEndRef.current?.scrollIntoView({ behavior: behavior });
+    };
+
+    // 3. EFECTO: Se ejecuta cuando cambia el chat o llegan mensajes
+    useEffect(() => {
+        // Ejecutamos el scroll
+        scrollToBottom();
+    }, [mensajesDelChat, idChatSeleccionado]); // <--- IMPORTANTE: Dependencias
     return (
 
         <div className="chat-window">
@@ -23,7 +39,7 @@ export const ChatActivo = ({ idChatSeleccionado, enviarMensaje, mensajesDelChat,
                     <button className="btn-back mobile-only" onClick={onBack}>
                         ⬅
                     </button>
-                    
+
                     <img
                         src={headerContactSelected?.avatar_url}
                         alt="Avatar"
@@ -53,18 +69,16 @@ export const ChatActivo = ({ idChatSeleccionado, enviarMensaje, mensajesDelChat,
                         />
                     )
                 })}
+                {/* Este div vacío siempre estará al final. React scrolleará hasta aquí. */}
+                <div ref={messagesEndRef} />
             </div>
 
             <div className="chat-input-area">
                 <InputMessage
                     idChat={idChatSeleccionado}
-                    // ... necesitamos pasarle tu ID para que al enviar sepa quien eres, 
-                    // pero por ahora el nombre vendrá al recargar o si lo simulas.
                     sender_id={Number(user?.id)}
                     enviarMensaje={enviarMensaje}
                 />
-
-
             </div>
         </div>
 
