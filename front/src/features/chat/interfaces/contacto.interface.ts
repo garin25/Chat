@@ -6,5 +6,6 @@ export interface TypeContacto {
     estado?: string | null;  // Puede ser null si es un grupo
     chat_id: number | null;
     cantidadNoLeidos:number;
+    ultimo_mensaje:string;
 }
 

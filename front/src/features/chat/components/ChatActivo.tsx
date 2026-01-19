@@ -49,6 +49,7 @@ export const ChatActivo = ({ idChatSeleccionado, enviarMensaje, mensajesDelChat,
                             nombre={mensaje.sender.nombre || 'Desconocido'}
                             esMio={soyYo}
                             estado={mensaje.estado}
+                            sentAt={mensaje.sentAt}
                         />
                     )
                 })}

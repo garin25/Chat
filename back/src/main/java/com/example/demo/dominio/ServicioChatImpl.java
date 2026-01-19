@@ -61,6 +61,9 @@ public class ServicioChatImpl {
             boolean esGrupo = (chat.getNombre() != null && !chat.getNombre().isEmpty())
                     || chat.getParticipantes().size() > 2;
 
+            dto.setUltimoMensaje(chat.getUltimoMensajeContenido());
+            //aca podria agregar al dto la hora del ultimo mensaje
+
             if (esGrupo) {
                 // ... lógica de grupo ...
                 dto.setNombre(chat.getNombre());
@@ -121,15 +124,17 @@ public class ServicioChatImpl {
     }
 
     public Mensaje enviarAlChat(Long miId, Long chatId, String contenido) {
-        // necesito guardar los objetos?
-        // sender
-        //chat
+        Chat chat = repositorioChat.findById(chatId).orElseThrow();
         Optional<Usuario> usuario = repositorioLogin.findById(miId);
-        Optional<Chat> chat = repositorioChat.findById(chatId);
         Mensaje mensaje = new Mensaje();
         mensaje.setSender(usuario.get());
         mensaje.setContenido(contenido);
-        mensaje.setChat(chat.get());
+        mensaje.setChat(chat);
+
+        //Actualizar Chat (Desnormalización)
+        chat.setUltimoMensajeContenido(contenido);
+        chat.setUltimoMensajeFecha(mensaje.getSentAt());
+        repositorioChat.save(chat); // Actualizamos el chat
         return  repositorioMensaje.save(mensaje);
     }
 

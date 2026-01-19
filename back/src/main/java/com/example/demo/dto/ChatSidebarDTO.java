@@ -24,7 +24,7 @@ public class ChatSidebarDTO {
 
     private Long cantidadNoLeidos;
 
-    // Campo extra para ordenamiento si querés
+    @JsonProperty("ultimo_mensaje")
     private String ultimoMensaje;
 
 

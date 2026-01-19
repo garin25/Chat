@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface RepositorioMensaje  extends JpaRepository<Mensaje,Long> {
@@ -28,4 +29,5 @@ public interface RepositorioMensaje  extends JpaRepository<Mensaje,Long> {
     // Notar que pasamos EstadoMensaje.LEIDO desde el servicio como el estado que NO queremos
     // (o sea, buscamos ENVIADO o ENTREGADO)
     List<Mensaje> findByChatIdAndSenderIdNotAndEstadoNot(Long chatId, Long lectorId, EstadoMensaje estadoMensaje);
+
 }

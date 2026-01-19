@@ -5,9 +5,10 @@ interface MensajeProps {
     nombre: string;
     esMio: boolean;
     estado: string; // "ENVIANDO" | "ENVIADO" | "ENTREGADO" | "LEIDO"
+    sentAt:string;
 }
 
-export const Mensaje = ({ contenido, nombre, esMio, estado }: MensajeProps) => {
+export const Mensaje = ({ contenido, nombre, esMio, estado,sentAt }: MensajeProps) => {
 
     // Función helper para renderizar el ícono según el estado
     const renderStatusIcon = (estadoActual: string) => {
@@ -35,8 +36,7 @@ export const Mensaje = ({ contenido, nombre, esMio, estado }: MensajeProps) => {
                 
                 {/* Bloque de Metadatos (Hora y Estado) */}
                 <div className="mensaje-meta">
-                    {/* Aquí iría la hora si la tuvieras, ej: <small>12:30</small> */}
-                    
+                    <small>{sentAt}</small>
                     {/* El estado SOLO se muestra si el mensaje es mío */}
                     {esMio && (
                         <span className="estado-ticks">

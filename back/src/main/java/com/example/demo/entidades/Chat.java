@@ -36,4 +36,10 @@ public class Chat {
     @Column(name = "avatar_url")
     private String avatarUrl;   // Avatar del grupo
 
+    @Column(name = "ultimo_mensaje_contenido")
+    private String ultimoMensajeContenido;
+
+    @Column(name = "ultimo_mensaje_fecha")
+    private LocalDateTime ultimoMensajeFecha;
+
 }

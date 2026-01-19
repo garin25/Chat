@@ -58,7 +58,7 @@ export const ListaDeContactos = ({ listaDeContactos, seleccionarChat, creandoGru
               />
 
               <div className="info">
-                <span>{item.nombre}</span>
+                <span>{item.nombre}:</span><span>  {item.ultimo_mensaje}</span> 
               </div>
             </div>
               {item.cantidadNoLeidos > 0 && (
