@@ -1,3 +1,4 @@
+import { useAuth } from "@/features/auth/AuthContext";
 import type { TypeContacto } from "../interfaces/contacto.interface";
 
 interface ListaProps {
@@ -8,7 +9,7 @@ interface ListaProps {
   toggleSeleccion: (usuarioId: number) => void
 }
 export const ListaDeContactos = ({ listaDeContactos, seleccionarChat, creandoGrupo, seleccionados, toggleSeleccion }: ListaProps) => {
-
+  const { user } = useAuth();
 
 
   return (
@@ -16,7 +17,14 @@ export const ListaDeContactos = ({ listaDeContactos, seleccionarChat, creandoGru
       {listaDeContactos.map((item) => {
         // Identificamos si este usuario específico está seleccionado
         const estaSeleccionado = seleccionados.includes(item.chat_id || 1);
-
+        const esMio = item.ultimo_mensaje_sender_id === user?.id;// === miId
+        const estado = item.ultimo_mensaje_estado; // "ENVIADO", "LEIDO", etc.
+        const renderEstadoIcon = (estado:string) => {
+          if (estado === 'ENVIADO') return <span style={{ color: 'gray' }}>✓</span>;
+          if (estado === 'ENTREGADO') return <span style={{ color: 'gray' }}>✓✓</span>;
+          if (estado === 'LEIDO') return <span style={{ color: '#53bdeb' }}>✓✓</span>; // Azulito
+          return null; // Relojito o nada
+        };
         return (
           <div
             key={item.chat_id}
@@ -26,7 +34,7 @@ export const ListaDeContactos = ({ listaDeContactos, seleccionarChat, creandoGru
             onClick={() => {
               if (creandoGrupo) {
                 // MODO SELECCIÓN: No abre chat, solo marca/desmarca
-                toggleSeleccion(item.chat_id|| 1);
+                toggleSeleccion(item.chat_id || 1);
               } else {
                 // MODO NAVEGACIÓN: Abre el chat normal
                 if (item.chat_id) {
@@ -38,7 +46,7 @@ export const ListaDeContactos = ({ listaDeContactos, seleccionarChat, creandoGru
             }}
           >
             {/* 1. EL INPUT CONDICIONAL */}
-            {creandoGrupo && item.usuario_id!=null && (
+            {creandoGrupo && item.usuario_id != null && (
               <div className="checkbox-container">
                 <input
                   type="checkbox" // Uso checkbox para permitir grupos de varias personas
@@ -58,14 +66,36 @@ export const ListaDeContactos = ({ listaDeContactos, seleccionarChat, creandoGru
               />
 
               <div className="info">
-                <span>{item.nombre}:</span><span>  {item.ultimo_mensaje}</span> 
+                <span>{item.nombre}:</span>
               </div>
             </div>
-              {item.cantidadNoLeidos > 0 && (
-                  <div className="notification-badge">
-                    {item.cantidadNoLeidos > 99 ? "99+" : item.cantidadNoLeidos}
-                  </div>
+            <div className="ultimo-mensaje-row" style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.9rem', color: '#8696a0' }}>
+                
+                {/* CASO 1: Lo envié YO */}
+                {esMio ? (
+                    <>
+                        <span className="estado-icon">
+                            {renderEstadoIcon(estado)}
+                        </span>
+                        <span>{item.ultimo_mensaje}</span>
+                    </>
+                ) : (
+                /* CASO 2: Lo envió OTRO */
+                    <>
+                        {/* Opcional: Poner nombre si es grupo */}
+                        {item.tipo === 'group' && <span style={{fontWeight: 'bold'}}>Juan: </span>}
+                        <span>{item.ultimo_mensaje}</span>
+                        {/* Si lo envió otro, NO mostramos ticks, solo el texto */}
+                        {/* A veces se muestra un puntito azul o contador si NO lo has leido tú */}    
+                    </>
                 )}
+                
+            </div>
+            {item.cantidadNoLeidos > 0 && (
+              <div className="notification-badge">
+                {item.cantidadNoLeidos > 99 ? "99+" : item.cantidadNoLeidos}
+              </div>
+            )}
 
           </div>
         );

@@ -1,4 +1,5 @@
 export interface EstadoMensajeDTO{
     id:number,
-    estado:string
+    estado:string,
+    chatId:number
 }

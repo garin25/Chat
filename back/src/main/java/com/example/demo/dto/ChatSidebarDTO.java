@@ -26,6 +26,11 @@ public class ChatSidebarDTO {
 
     @JsonProperty("ultimo_mensaje")
     private String ultimoMensaje;
+    @JsonProperty("ultimo_mensaje_sender_id")
+    private Long ultimoMensajeSenderId;
+    @JsonProperty("ultimo_mensaje_estado")
+    private String ultimoMensajeEstado; // "ENVIADO", "LEIDO"
+    //private String ultimoMensajeSenderName; // Opcional: Para grupos ("Juan: Hola")
 
 
 }

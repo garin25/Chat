@@ -149,29 +149,55 @@ public class ControladorChat {
         messagingTemplate.convertAndSendToUser(
                 msg.getSender().getTelefono(),
                 "/queue/mensajes/cambio-estado",
-                new EstadoMensajeDTO(msg.getId(), EstadoMensaje.ENTREGADO)
-        );
+                new EstadoMensajeDTO(msg.getId(), EstadoMensaje.ENTREGADO.name(),msg.getChat().getId()));
     }
 
     @MessageMapping("/chat/mark-as-read")
     public void marcarChatComoLeido(@Payload Map<String, Long> payload,
                                     @UsuarioAutenticado Usuario lector) {
+
         Long chatId = payload.get("chatId");
-        // 1. Lógica de Negocio (Servicio)
-        // "Buscar todos los mensajes en este chat enviados por EL OTRO
-        // que todavía no estén en estado LEIDO y pasarlos a LEIDO"
-        List<Mensaje> mensajesLeidos = servicioChat.marcarMensajesComoLeidos(chatId, lector.getId());
+
+        // 1. BASE DE DATOS (Servicio)
+        // Actualiza mensajes y la tabla Chat. Retorna los mensajes que cambiaron.
+        List<Mensaje> mensajesActualizados = servicioChat.marcarMensajesComoLeidos(chatId, lector.getId());
+
+        // Si no había nada nuevo por leer, no hacemos nada
+        if (mensajesActualizados.isEmpty()) return;
+
+        // Obtenemos el teléfono del REMITENTE (el que debe recibir los avisos)
+        // Asumimos que todos los mensajes no leídos son del mismo remitente (el otro usuario)
+        String telefonoRemitente = mensajesActualizados.get(0).getSender().getTelefono();
 
 
-        // 2. Avisar al REMITENTE (El que escribió los mensajes)
-        // Para cada mensaje actualizado, o un aviso en bloque
-        for (Mensaje msg : mensajesLeidos) {
+        // --- A. AVISO PARA EL CHAT ACTIVO (Bucle) ---
+        // Esto hace que los ticks individuales se pongan azules
+        for (Mensaje msg : mensajesActualizados) {
+            EstadoMensajeDTO dtoMensaje = new EstadoMensajeDTO(
+                    msg.getId(),
+                    EstadoMensaje.LEIDO.name(),
+                    chatId
+            );
+
             messagingTemplate.convertAndSendToUser(
-                    msg.getSender().getTelefono(), // Avisamos a quien lo envió
-                    "/queue/mensajes/cambio-estado",
-                    new EstadoMensajeDTO(msg.getId(), EstadoMensaje.LEIDO)
+                    telefonoRemitente,
+                    "/queue/mensajes/cambio-estado", // Tu subEstado
+                    dtoMensaje
             );
         }
+
+
+        // --- B. AVISO PARA EL SIDEBAR (Disparo Único) ---
+        // Esto hace que la lista de la izquierda marque el chat como LEIDO.
+        // No hace falta hacerlo dentro del bucle, con avisar una vez basta.
+
+        EstadoSidebarDTO dtoSidebar = new EstadoSidebarDTO(chatId, EstadoMensaje.LEIDO.name());
+
+        messagingTemplate.convertAndSendToUser(
+                telefonoRemitente,
+                "/queue/chat/actualizacion-estado", // Tu subEstadoSidebar
+                dtoSidebar
+        );
     }
 
 }

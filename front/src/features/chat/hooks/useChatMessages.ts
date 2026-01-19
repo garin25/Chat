@@ -6,6 +6,7 @@ import type { MessageFront } from '../interfaces/messageFront.interface';
 import type { MessageDTO } from '../interfaces/message.dto.socket.interface';
 import type { EstadoMensajeDTO } from '../interfaces/estadoMensajeDTO.interface';
 import type { HeaderContactSelected } from '../interfaces/headerContactSelected.interface';
+import type { EstadoSidebar } from '../interfaces/estadoSidebar.interface';
 
 export const useChatMessages = (
     clientRef: React.MutableRefObject<any>, // Recibimos la ref del otro hook
@@ -97,25 +98,39 @@ export const useChatMessages = (
         const esElChatAbierto = String(chatActivoRef.current) === String(notificacion.chatId);
 
         if (esElChatAbierto) {
-            console.log("✅ Chat abierto, marcando leído...");
             notificarLectura(notificacion.chatId);
         } else {
-            console.log("📩 Chat cerrado, confirmando entrega...");
             notificarEntrega(notificacion.id);
         }
 
-        // Actualizar burbuja roja en Sidebar
-        setListaDeContactos(prev => prev.map(c => {
-            if (String(c.chat_id) === String(notificacion.chatId)) {
-                return {
-                    ...c,
-                    cantidadNoLeidos: esElChatAbierto ? 0 : (c.cantidadNoLeidos || 0) + 1,
-                    ultimoMensaje: notificacion.contenido
-                };
-            }
-            return c;
-        }));
-    }, [clientRef]); // Dependencias mínimas
+        // --- CORRECCIÓN AQUÍ: Actualización completa del Sidebar ---
+        setListaDeContactos(prev => {
+            const index = prev.findIndex(c => String(c.chat_id) === String(notificacion.chatId));
+
+            // Si es un chat nuevo que no estaba en la lista, podrías recargar
+            if (index === -1) return prev;
+
+            // 1. Creamos el objeto actualizado
+            const contactoActualizado: TypeContacto = {
+                ...prev[index],
+                cantidadNoLeidos: esElChatAbierto ? 0 : (prev[index].cantidadNoLeidos || 0) + 1,
+
+                // ACTUALIZAMOS EL TEXTO Y LA HORA
+                ultimo_mensaje: notificacion.contenido,
+                ultimo_mensaje_fecha: notificacion.sentAt,
+                ultimo_mensaje_estado: "ENTREGADO", // Para el receptor, el estado inicial es entregado
+                ultimo_mensaje_sender_id: notificacion.senderId // Importante saber quién lo mandó
+            };
+
+            // 2. REORDENAMOS (Movemos al principio)
+            const nuevaLista = [...prev];
+            nuevaLista.splice(index, 1);
+            nuevaLista.unshift(contactoActualizado);
+
+            return nuevaLista;
+        });
+
+    }, [clientRef]);
 
 
     // --- 4. SUSCRIPCIONES (SOCKETS) ---
@@ -132,17 +147,51 @@ export const useChatMessages = (
             manejarNotificacion(JSON.parse(msg.body));
         });
 
-        // Cambios de estado (Doble tick)
+
         const subEstado = clientRef.current.subscribe('/user/queue/mensajes/cambio-estado', (msg: any) => {
-            console.log("Doble tick")
+            // Esto suele traer { id: 123, estado: 'LEIDO', chatId: 456 }
             const update: EstadoMensajeDTO = JSON.parse(msg.body);
-            setHistorialDeMensajes(prev => prev.map(m =>
-                String(m.id) === String(update.id) ? { ...m, estado: update.estado } : m
-            ));
+
+            // 1. Actualizar CHAT ACTIVO (Si corresponde)
+            // Solo si el mensaje actualizado pertenece al chat que estoy viendo
+            if (chatActivoRef.current && String(chatActivoRef.current) === String(update.chatId)) {
+                console.log(" CHAT RECIBI EL CAMBIO DE ESTADOOOOOOOOOOOOOOO");
+                setHistorialDeMensajes(prev => prev.map(m =>
+                    String(m.id) === String(update.id) ? { ...m, estado: update.estado } : m
+                ));
+            }
+        });
+
+        // En tu useEffect de suscripciones...
+
+        const subEstadoSidebar = clientRef.current.subscribe('/user/queue/chat/actualizacion-estado', (msg: any) => {
+            // Asegúrate de que tu backend envíe { "chatId": 1, "estado": "LEIDO" }
+            const update = JSON.parse(msg.body);
+
+            console.log("🔥 PAYLOAD LECTURA:", update); // Confirma que update.chatId tiene valor
+
+            setListaDeContactos(prev => {
+                return prev.map(c => {
+                    // Comparamos String vs String para evitar problemas de tipos
+                    // Y buscamos la propiedad correcta en 'update' (puede ser update.chatId o update.chat_id según tu Java)
+                    if (String(c.chat_id) === String(update.chatId || update.chat_id)) {
+
+                        console.log("✅ ACTUALIZANDO ESTADO A LEIDO EN CHAT:", c.nombre);
+
+                        return {
+                            ...c,
+                            ultimo_mensaje_estado: "LEIDO", // <--- Esto actualizará el icono
+                            cantidadNoLeidos: 0
+                        };
+                    }
+                    return c;
+                });
+            });
         });
 
         return () => {
             subNotif.unsubscribe();
+            subEstadoSidebar.unsubscribe();
             subEstado.unsubscribe();
         };
     }, [isConnected, manejarNotificacion]); // Se ejecuta al conectar
@@ -213,7 +262,7 @@ export const useChatMessages = (
 
     // --- 5. ACCIONES (API PÚBLICA DEL HOOK) ---
 
-    const seleccionarChat = (chatId: number|null) => {
+    const seleccionarChat = (chatId: number | null) => {
 
         // 2. Si es null, limpiamos el estado y salimos (Early Return)
         if (chatId === null) {
@@ -251,20 +300,55 @@ export const useChatMessages = (
         const mensajeOptimista: Message = {
             id: Date.now(),
             contenido: nuevoTexto.contenido,
-            sentAt: new Date().toISOString(),
+            sentAt: new Date().toISOString(), // Hora actual ISO
             chatId: Number(idChatSeleccionado),
             estado: "ENVIANDO",
-            sender: { id: user.id, nombre: "Yo" } // Ajusta según tu user object
+            sender: { id: user.id, nombre: "Yo" }
         };
 
+        // Actualizamos historial del chat central
         setHistorialDeMensajes(prev => [...prev, mensajeOptimista]);
 
-        // 2. El envío real se hace desde el componente Input o aquí mismo si tienes la lógica
+        // 2. Actualizar Sidebar OPTIMISTA
+        setListaDeContactos(prev => {
+            // A. BLINDAJE DE TIPOS: Convertimos ambos a String para comparar
+            const chatIndex = prev.findIndex(c => String(c.chat_id) === String(mensajeOptimista.chatId));
+
+            if (chatIndex === -1) {
+                console.warn("⚠️ No se encontró el chat en el sidebar para actualizar");
+                return prev;
+            }
+
+            // B. CREAR OBJETO ACTUALIZADO
+            const chatActualizado: TypeContacto = {
+                ...prev[chatIndex],
+                ultimo_mensaje: mensajeOptimista.contenido,
+                ultimo_mensaje_sender_id: user.id,
+                ultimo_mensaje_estado: "ENVIANDO",
+
+                // C. CLAVE PARA EL ORDENAMIENTO VISUAL 👇
+                // Actualizamos la fecha para que si el Sidebar usa .sort(), este quede primero
+                ultimo_mensaje_fecha: mensajeOptimista.sentAt
+            };
+
+            // D. REORDENAMIENTO MANUAL (Unshift)
+            const nuevaLista = [...prev];
+
+            // Borramos de la posición antigua
+            nuevaLista.splice(chatIndex, 1);
+
+            // Insertamos al principio
+            nuevaLista.unshift(chatActualizado);
+
+            console.log("✅ Sidebar reordenado y actualizado");
+            return nuevaLista;
+        });
+        // 3. El envío real se hace desde el componente Input o aquí mismo si tienes la lógica
         // Supongo que tu componente ChatActivo o el Input se encarga de llamar al endpoint POST,
         // o puedes llamar a ChatService.enviarMensaje(...) aquí.
     };
 
-    // --- RETORNO (LO QUE USA WSP.TSX) ---
+
     return {
         listaDeContactos,
         historialDeMensajes,
@@ -272,6 +356,6 @@ export const useChatMessages = (
         headerContactSelected,
         seleccionarChat,
         enviarMensaje,
-        recargarContactos // Para usarlo cuando creas un grupo o contacto nuevo
+        recargarContactos
     };
 };

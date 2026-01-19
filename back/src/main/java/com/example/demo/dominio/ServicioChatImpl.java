@@ -62,6 +62,8 @@ public class ServicioChatImpl {
                     || chat.getParticipantes().size() > 2;
 
             dto.setUltimoMensaje(chat.getUltimoMensajeContenido());
+            dto.setUltimoMensajeSenderId(chat.getUltimoMensajeSenderId());
+            dto.setUltimoMensajeEstado(String.valueOf(chat.getUltimoMensajeEstado()));
             //aca podria agregar al dto la hora del ultimo mensaje
 
             if (esGrupo) {
@@ -134,6 +136,8 @@ public class ServicioChatImpl {
         //Actualizar Chat (Desnormalización)
         chat.setUltimoMensajeContenido(contenido);
         chat.setUltimoMensajeFecha(mensaje.getSentAt());
+        chat.setUltimoMensajeSenderId(miId);
+        chat.setUltimoMensajeEstado(EstadoMensaje.ENVIADO);
         repositorioChat.save(chat); // Actualizamos el chat
         return  repositorioMensaje.save(mensaje);
     }
@@ -250,6 +254,23 @@ public class ServicioChatImpl {
         // saveAll hace el update por nosotros
         List<Mensaje> mensajesActualizados = repositorioMensaje.saveAll(mensajesPendientes);
 
+        //(Sincronizar Tabla Chat) Para la lista de contactos
+        Chat chat = repositorioChat.findById(chatId)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Chat no encontrado"));
+
+        // Si el "último mensaje" que guarda el Chat NO lo envié yo (el lector),
+        // significa que acabo de leer el último mensaje que me mandaron.
+        // Por lo tanto, actualizo el estado en la portada del chat.
+
+        Long idRemitenteUltimoMensaje = chat.getUltimoMensajeSenderId();
+
+        if (idRemitenteUltimoMensaje != null && !idRemitenteUltimoMensaje.equals(lectorId)) {
+            // Solo actualizamos si el estado actual NO es ya LEIDO (para ahorrar query)
+            if (chat.getUltimoMensajeEstado() != EstadoMensaje.LEIDO) {
+                chat.setUltimoMensajeEstado(EstadoMensaje.LEIDO);
+                repositorioChat.save(chat);
+            }
+        }
         // 4. Retornamos la lista para que el Controller/Socket pueda notificar
         return mensajesActualizados;
     }

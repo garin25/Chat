@@ -7,5 +7,8 @@ export interface TypeContacto {
     chat_id: number | null;
     cantidadNoLeidos:number;
     ultimo_mensaje:string;
+    ultimo_mensaje_sender_id:number;
+    ultimo_mensaje_estado:string;
+    ultimo_mensaje_fecha?: string;
 }
 

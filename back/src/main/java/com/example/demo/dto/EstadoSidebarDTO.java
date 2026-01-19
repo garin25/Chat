@@ -6,8 +6,7 @@ import lombok.Data;
 
 @Data
 @AllArgsConstructor
-public class EstadoMensajeDTO {
-    Long id;
-    String estado;
+public class EstadoSidebarDTO {
     Long chatId;
+    String estado;
 }
