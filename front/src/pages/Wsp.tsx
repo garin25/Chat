@@ -45,9 +45,6 @@ export const Wsp = () => {
 
   // Función para el botón "Volver"
   const handleVolver = () => {
-    // Necesitas una forma de setear null. 
-    // Si seleccionarChat solo acepta number, crea una funcion setChatSeleccionado(null) en tu hook
-    // O pasa null si tu tipado lo permite.
     seleccionarChat(null);
   };
 

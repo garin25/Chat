@@ -15,18 +15,18 @@ export const ListaDeContactos = ({ listaDeContactos, seleccionarChat, creandoGru
     <div className="lista-contactos">
       {listaDeContactos.map((item) => {
         // Identificamos si este usuario específico está seleccionado
-        const estaSeleccionado = seleccionados.includes(item.usuario_id || 1);
+        const estaSeleccionado = seleccionados.includes(item.chat_id || 1);
 
         return (
           <div
-            key={item.chat_id || item.usuario_id}
+            key={item.chat_id}
             className={`contact-item ${estaSeleccionado && !creandoGrupo ? 'selected' : ''}`} // Clase visual extra
 
             // Lógica Central: Un solo onClick que decide qué hacer
             onClick={() => {
               if (creandoGrupo) {
                 // MODO SELECCIÓN: No abre chat, solo marca/desmarca
-                toggleSeleccion(item.usuario_id || 1);
+                toggleSeleccion(item.chat_id|| 1);
               } else {
                 // MODO NAVEGACIÓN: Abre el chat normal
                 if (item.chat_id) {

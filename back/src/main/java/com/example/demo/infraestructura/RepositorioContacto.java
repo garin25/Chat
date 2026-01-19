@@ -15,6 +15,7 @@ import java.util.Optional;
 public interface RepositorioContacto  extends JpaRepository<Contacto,Long> {
     Optional<List<Contacto>> findByTitularId(Long titularId); // me alcanza con devolver solo los id
 
+    List<Contacto> findAllByTitularId(Long titularId);  // hay diferencia con el de arriba?
 
 
     boolean existsByTitularAndContactoUsuario(Usuario usuarioTitular, Usuario usuarioContacto);
