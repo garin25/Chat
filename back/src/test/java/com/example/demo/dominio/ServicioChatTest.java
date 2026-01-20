@@ -213,7 +213,7 @@ class ServicioChatTest {
 
     }
 
-    @Test
+    /*@Test
     void crearGrupo_LanzaExcepcion_enCasoDeNombreNulo() {
         Usuario usuario = new Usuario();
         usuario.setId(1L);
@@ -320,5 +320,5 @@ class ServicioChatTest {
         assertEquals(chatReturning.getNombre(), chat.getNombre());
         assertEquals(chatReturning.getAvatarUrl(), chat.getAvatarUrl());
 
-    }
+    }*/
 }

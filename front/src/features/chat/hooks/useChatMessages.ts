@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { ChatService } from '../services/chat.service'; // Ajusta tu import
 import type { TypeContacto } from '../interfaces/contacto.interface';
 import type { Message } from '../interfaces/message.interface';
 import type { MessageFront } from '../interfaces/messageFront.interface';

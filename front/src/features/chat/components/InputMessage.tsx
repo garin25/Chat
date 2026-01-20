@@ -14,7 +14,7 @@ export const InputMessage = ({ enviarMensaje, idChat, sender_id, clientRef }: In
 
     const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
     const [texto, setTexto] = useState(""); // Solo guardamos el texto
-    const { usuarioEscribiendo, notificarEscritura } = useEscribiendo(idChat, clientRef, user);
+    const { notificarEscritura } = useEscribiendo(idChat, clientRef, user);
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === 'Enter') {
