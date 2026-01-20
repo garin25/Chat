@@ -42,7 +42,6 @@ function LoginForm() {
                 // Al llamar a login(), el AuthContext guarda el token en localStorage
                 // y actualiza el estado de toda la app.
                 login(jsonResponse.token, jsonResponse.user);
-
                 // 4. REDIRECCIÓN 
                 navigate("/wsp")
 

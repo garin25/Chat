@@ -5,7 +5,8 @@ import type { MessageFront } from "../interfaces/messageFront.interface";
 import { InputMessage } from "./InputMessage"
 import { Mensaje } from "./Mensaje"
 import { useEffect, useRef } from "react";
-import { usePresencia } from "../hooks";
+import { useEscribiendo, usePresencia } from "../hooks";
+import { StatusEnLinea } from "./StatusEnLinea";
 
 interface ChatProps {
     idChatSeleccionado: number | null,
@@ -18,7 +19,9 @@ interface ChatProps {
 }
 export const ChatActivo = ({ idChatSeleccionado, enviarMensaje, mensajesDelChat, headerContactSelected, onBack, clientRef, isConnected }: ChatProps) => {
     const { user } = useAuth();
+    console.log({user});
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    const { usuarioEscribiendo} = useEscribiendo(idChatSeleccionado, clientRef, user);
 
     // 1. Extraemos el ID solo si es chat privado
     const targetUserId = headerContactSelected?.tipo === 'private'
@@ -60,28 +63,24 @@ export const ChatActivo = ({ idChatSeleccionado, enviarMensaje, mensajesDelChat,
                         <br />
                         <span className="header-subtitle">
                             {/* CASO 1: CHAT PRIVADO */}
-                            {headerContactSelected?.tipo === 'private' && (
-                                <>
-                                    {estado === 'ONLINE' ? (
-                                        <span style={{ color: '#25D366', fontWeight: 'bold' }}>En línea</span>
-                                    ) : (
-                                        <span style={{ fontSize: '0.8em', color: '#8696a0' }}>
-
-                                            {ultimaVez && (
-                                                <span>últ. vez {new Date(ultimaVez).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                                            )}
-                                        </span>
-                                    )}
-                                </>
+                            {headerContactSelected?.tipo === 'private' && !usuarioEscribiendo &&(
+                                <StatusEnLinea estado={estado} ultimaVez={ultimaVez} />
                             )}
 
                             {/* CASO 2: GRUPO (Escalabilidad) */}
-                            {headerContactSelected?.tipo === 'group' && (
+                            {headerContactSelected?.tipo === 'group' && !usuarioEscribiendo && (
                                 <span style={{ fontSize: '0.8em', color: '#8696a0' }}>
                                     {/* Aquí en el futuro pondrás: "Juan, Pedro, +3 más..." */}
                                     Toca para info del grupo
                                 </span>
                             )}
+
+                            {usuarioEscribiendo && (
+                                <span style={{ color: '#00a884', fontStyle: 'italic' }}>
+                                    {usuarioEscribiendo} está escribiendo...
+                                </span>
+                            )}
+
                         </span>
                     </div>
                 </div>
@@ -113,6 +112,7 @@ export const ChatActivo = ({ idChatSeleccionado, enviarMensaje, mensajesDelChat,
                     idChat={idChatSeleccionado}
                     sender_id={Number(user?.id)}
                     enviarMensaje={enviarMensaje}
+                    clientRef={clientRef}
                 />
             </div>
         </div>

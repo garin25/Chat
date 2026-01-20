@@ -1,14 +1,20 @@
-import { useState} from "react";
+import { useState } from "react";
 import type { MessageFront } from "../interfaces/messageFront.interface";
+import { useEscribiendo } from "../hooks";
+import { useAuth } from "@/features/auth/AuthContext";
 
 interface InputProps {
     enviarMensaje: (nuevoTexto: MessageFront) => void,
     idChat: number | null,
-    sender_id:number
+    sender_id: number,
+    clientRef: React.MutableRefObject<any>;
 }
-export const InputMessage = ({ enviarMensaje, idChat,sender_id }: InputProps) => {
-      const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
+export const InputMessage = ({ enviarMensaje, idChat, sender_id, clientRef }: InputProps) => {
+    const { user } = useAuth();
+
+    const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
     const [texto, setTexto] = useState(""); // Solo guardamos el texto
+    const { usuarioEscribiendo, notificarEscritura } = useEscribiendo(idChat, clientRef, user);
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === 'Enter') {
@@ -23,7 +29,7 @@ export const InputMessage = ({ enviarMensaje, idChat,sender_id }: InputProps) =>
         // 1. Para el Frontend (optimistic UI): Usamos el ID temporal
         const mensajeFrontend: MessageFront = {
             id: Date.now(),
-            sender_id: sender_id,  
+            sender_id: sender_id,
             chat_id: idChat,
             contenido: texto
         };
@@ -51,13 +57,21 @@ export const InputMessage = ({ enviarMensaje, idChat,sender_id }: InputProps) =>
             });
     }
 
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const texto = e.target.value;
+        setTexto(texto);
+
+        // 2. Avisamos al hook que cambió el texto
+        notificarEscritura(texto);
+    };
+
     return (
         // Usamos onKeyDown para detectar el Enter
         <div className="chat-input-area">
             <input
                 type="text"
                 value={texto}
-                onChange={(e) => setTexto(e.target.value)}
+                onChange={handleInputChange}
                 onKeyDown={handleKeyDown}
                 placeholder="Escribe un mensaje..."
                 className="input-message"
