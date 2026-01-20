@@ -4,6 +4,7 @@ import com.example.demo.config.JwtUtil;
 import com.example.demo.dto.AuthRequest;
 import com.example.demo.dto.AuthResponse;
 import com.example.demo.dto.NewUsuarioDTO;
+import com.example.demo.dto.UsuarioFrontDTO;
 import com.example.demo.entidades.Usuario;
 import com.example.demo.excepciones.*;
 import com.example.demo.infraestructura.RepositorioLogin;
@@ -74,7 +75,8 @@ public class ServicioLoginImpl {
 
         AuthResponse response = new AuthResponse();
         response.setToken(jwt);
-        response.setUser(user);
+        //response.setUser(user);
+        response.setUser(new UsuarioFrontDTO(user.getId(), user.getTelefono(),  user.getNombre()));
 
         return response;
     }

@@ -8,6 +8,7 @@ import com.example.demo.dto.AuthRequest;
 import com.example.demo.dto.AuthResponse;
 import com.example.demo.config.JwtUtil; // Mock necesario para Security
 import com.example.demo.dto.NewUsuarioDTO;
+import com.example.demo.dto.UsuarioFrontDTO;
 import com.example.demo.entidades.Usuario;
 import com.example.demo.excepciones.ContraseniaCortaException;
 import com.example.demo.excepciones.ContraseniaIncorrectaException;
@@ -56,17 +57,18 @@ public class ControladorLoginTest {
     @Test
     void login_deberiaRetornarToken_cuandoCredencialesSonCorrectas() throws Exception {
         // GIVEN
-        Usuario usuario = new Usuario();
+        /*Usuario usuario = new Usuario();
         usuario.setTelefono("123456789");
         usuario.setPassword("123456");
         usuario.setNombre("Jose");
         usuario.setEstado("estado");
-        usuario.setAvatarUrl("https://avatars.githubusercontent.com");
+        usuario.setAvatarUrl("https://avatars.githubusercontent.com");*/
 
         AuthRequest request = new AuthRequest("123456789", "123456");
         AuthResponse responseToken = new AuthResponse();
         responseToken.setToken("token-falso-jwt");
-        responseToken.setUser(usuario);
+        //responseToken.setUser(usuario);
+        responseToken.setUser(new UsuarioFrontDTO(1L,"123456789", "123456"));
 
         when(servicioLogin.loginWsp(any(AuthRequest.class))).thenReturn(responseToken);
 

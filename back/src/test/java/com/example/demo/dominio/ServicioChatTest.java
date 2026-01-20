@@ -203,6 +203,8 @@ class ServicioChatTest {
         Mockito.when(repositorioMensaje.saveAll(mensajesPendientes))
                 .thenReturn(mensajesPendientes);
 
+        Mockito.when(repositorioChat.findById(chat.getId())).thenReturn(Optional.of(chat));
+
         List<Mensaje>resultado = servicioChat.marcarMensajesComoLeidos(1L, 2L);
 
         assertEquals(resultado.size(), 2);

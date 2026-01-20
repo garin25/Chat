@@ -194,41 +194,42 @@ public class ServicioChatImpl {
     }
 
     @Transactional
-    public Chat crearGrupo(Usuario yo, NewGroupDTO body){
-
-       /*   Ya esta @Valid en los DTO
-       if(body.getNombreGrupo()==null){
-            throw new Exception("El nombre del grupo es obligatorio");
-     }*/
-        // Este lo dejo por si pasan una lista vacia
+    public Chat crearGrupo(Usuario yo,NewGroupDTO body) {
         if(body.getIntegrantes().isEmpty()){
             throw new RecursoNoEncontradoException("Los integrantes son obligatorios");
         }
-
-        List<Usuario> integrantes = new ArrayList<>();
-        for (Long idIntegrante : body.getIntegrantes()){
-            Usuario integrante = repositorioLogin.findById(idIntegrante)
-                    .orElseThrow(() -> new RecursoNoEncontradoException("No se encontraron los integrantes"));
-            integrantes.add(integrante);
-        }
-
+        // 1. Crear y guardar el Chat primero
         Chat chat = new Chat();
         chat.setTipo("group");
         chat.setCreatedAt(LocalDateTime.now());
         chat.setNombre(body.getNombreGrupo());
         chat.setAvatarUrl("https://i.pravatar.cc/150?u="+body.getNombreGrupo());
-        Chat chatReturning = repositorioChat.save(chat);
-        Participante p1 = new Participante();
-        p1.setUsuario(yo);
-        p1.setChat(chatReturning);
-        repositorioParticipante.save(p1);
-        for (Usuario integrant : integrantes){
-            Participante p2 = new Participante();
-            p2.setUsuario(integrant);
-            p2.setChat(chatReturning);
-            repositorioParticipante.save(p2);
+       Chat chatReturning  = repositorioChat.save(chat);
+
+        // 2. USAR UN SET PARA EVITAR DUPLICADOS AUTOMÁTICAMENTE
+        // Agregamos todos los IDs que vinieron del front
+        Set<Long> participantesUnicos = new HashSet<>(body.getIntegrantes());
+
+        // Agregamos al Admin (Si ya estaba en la lista, el Set lo ignora)
+        participantesUnicos.add(yo.getId());
+
+        // 3. Iterar y Guardar
+        for (Long userId : participantesUnicos) {
+            System.out.println("🔍 Buscando usuario con ID: " + userId);
+            Usuario usuario = repositorioLogin.findById(userId)
+                    .orElseThrow(() ->new RuntimeException("❌ ERROR CRÍTICO: No existe el usuario con ID " + userId + " en la tabla Usuarios."));
+
+            Participante participante = new Participante();
+            participante.setChat(chatReturning);
+            participante.setUsuario(usuario);
+
+            // Solo el creador es admin
+            participante.setIsAdmin(userId.equals(yo.getId()));
+
+            repositorioParticipante.save(participante);
         }
-        return chatReturning;
+
+        return chat;
     }
 
     @Transactional // Importante para asegurar la integridad

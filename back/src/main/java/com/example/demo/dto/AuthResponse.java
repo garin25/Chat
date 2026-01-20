@@ -9,14 +9,15 @@ public class AuthResponse {
     // --- Getters y Setters ---
     private String token;
     private String type = "Bearer";
-    private Usuario user;
+   // private Usuario user;
+    private UsuarioFrontDTO user;
 
     // Constructor vacío
     public AuthResponse() {
     }
 
     // Constructor con campos clave
-    public AuthResponse(String token, Usuario user) {
+    public AuthResponse(String token, UsuarioFrontDTO user) {
         this.token = token;
         this.user = user;
     }

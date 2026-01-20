@@ -26,6 +26,7 @@ export const useGroupManagement = (onGroupCreated: () => void) => {
     const confirmarCrearGrupo = async () => {
         // Aquí podrías usar un input real en vez de localStorage
         const nombreGrupo = localStorage.getItem("nombreGrupo"); 
+        console.log({nombreGrupo});
         
         if (nombreGrupo && seleccionados.length > 0) {
             try {

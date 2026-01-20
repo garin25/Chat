@@ -16,7 +16,7 @@ export const ListaDeContactos = ({ listaDeContactos, seleccionarChat, creandoGru
     <div className="lista-contactos">
       {listaDeContactos.map((item) => {
         // Identificamos si este usuario específico está seleccionado
-        const estaSeleccionado = seleccionados.includes(item.chat_id || 1);
+        const estaSeleccionado = seleccionados.includes(item.usuario_id || 1);
         const esMio = item.ultimo_mensaje_sender_id === user?.id;// === miId
         const estado = item.ultimo_mensaje_estado; // "ENVIADO", "LEIDO", etc.
         const renderEstadoIcon = (estado:string) => {
@@ -34,7 +34,7 @@ export const ListaDeContactos = ({ listaDeContactos, seleccionarChat, creandoGru
             onClick={() => {
               if (creandoGrupo) {
                 // MODO SELECCIÓN: No abre chat, solo marca/desmarca
-                toggleSeleccion(item.chat_id || 1);
+                toggleSeleccion(item.usuario_id || 1);
               } else {
                 // MODO NAVEGACIÓN: Abre el chat normal
                 if (item.chat_id) {
