@@ -18,6 +18,7 @@ export const Wsp = () => {
   // 1. Estados UI simples
   const [isOpenModalContact, setIsOpenModalContact] = useState(false);
 
+
   // 2. Hooks de Chat (Feature: Chat)
   const { clientRef, isConnected } = useChatConnection(`${API_URL}/ws`, token);
 
@@ -93,6 +94,8 @@ export const Wsp = () => {
             mensajesDelChat={historialDeMensajes}
             headerContactSelected={headerContactSelected}
             onBack={handleVolver}
+            clientRef={clientRef}
+            isConnected={isConnected}
           />
         ) : (
           <div className="placeholder-desktop">Selecciona un chat</div>

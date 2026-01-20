@@ -93,4 +93,10 @@ public class ServicioLoginImpl {
     public Optional<Usuario> findByTelefono(String telefono) {
         return repositorioLogin.findByTelefono(telefono);
     }
+
+    public Optional<Usuario> findById(Long id) {
+        return repositorioLogin.findById(id);
+    }
+
+
 }

@@ -1,9 +1,11 @@
 package com.example.demo.presentacion;
 
+import com.example.demo.config.WebSocketEventListener;
 import com.example.demo.dominio.ServicioLoginImpl;
 import com.example.demo.dto.AuthRequest;
 import com.example.demo.dto.AuthResponse;
 import com.example.demo.dto.NewUsuarioDTO;
+import com.example.demo.dto.PresenciaDTO;
 import com.example.demo.entidades.Usuario;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,5 +48,20 @@ public class ControladorLogin {
     public ResponseEntity<Void> eliminar(@PathVariable Long id) { // Retorna Void
         servicioLogin.eliminar(id);
         return ResponseEntity.noContent().build(); // Devuelve 204 sin cuerpo
+    }
+
+    @GetMapping("/{id}/presencia")
+    public ResponseEntity<PresenciaDTO> getPresencia(@PathVariable Long id) {
+        boolean isOnline = WebSocketEventListener.USUARIOS_ONLINE.contains(id);
+
+        if (isOnline) {
+            return ResponseEntity.ok(new PresenciaDTO("ONLINE", null));
+        } else {
+            Usuario u = servicioLogin.findById(id).orElseThrow();
+            String fechaUltimaVez = (u.getLastSeen() != null)
+                    ? u.getLastSeen().toString()
+                    : null;
+            return ResponseEntity.ok(new PresenciaDTO("OFFLINE", fechaUltimaVez));
+        }
     }
 }

@@ -6,7 +6,6 @@ import type { MessageFront } from '../interfaces/messageFront.interface';
 import type { MessageDTO } from '../interfaces/message.dto.socket.interface';
 import type { EstadoMensajeDTO } from '../interfaces/estadoMensajeDTO.interface';
 import type { HeaderContactSelected } from '../interfaces/headerContactSelected.interface';
-import type { EstadoSidebar } from '../interfaces/estadoSidebar.interface';
 
 export const useChatMessages = (
     clientRef: React.MutableRefObject<any>, // Recibimos la ref del otro hook
@@ -280,7 +279,7 @@ export const useChatMessages = (
 
         // Avisar al backend
         notificarLectura(chatId);
-        ChatService.marcarComoLeidos(chatId); // Tu servicio existente
+       // ChatService.marcarComoLeidos(chatId); // Tu servicio existente
 
         // Setear Header
         const contacto = listaDeContactos.find(c => c.chat_id === chatId);
@@ -288,7 +287,9 @@ export const useChatMessages = (
             setHeaderContactSelected({
                 avatar_url: contacto.avatar_url,
                 nombre: contacto.nombre,
-                estado: contacto.estado
+                estado: contacto.estado,
+                usuario_id: contacto.usuario_id,
+                tipo:contacto.tipo
             });
         }
     };
