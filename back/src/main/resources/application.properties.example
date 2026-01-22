@@ -1,0 +1,16 @@
+# application.properties.example
+
+spring.application.name=NAME
+
+# Base de Datos
+spring.datasource.url=jdbc:postgresql://localhost:5432/mi_db
+spring.datasource.username=postgres
+spring.datasource.password=TU_CONTRASENIA
+
+# JWT
+jwt.secret=PONER_UN_SECRETO_LARGO_AQUI
+jwt.expiration=86400000
+
+# JPA
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.show-sql=true
