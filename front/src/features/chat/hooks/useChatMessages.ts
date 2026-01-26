@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import type { TypeContacto } from '../interfaces/contacto.interface';
 import type { Message } from '../interfaces/message.interface';
 import type { MessageFront } from '../interfaces/messageFront.interface';
@@ -6,12 +6,15 @@ import type { MessageDTO } from '../interfaces/message.dto.socket.interface';
 import type { EstadoMensajeDTO } from '../interfaces/estadoMensajeDTO.interface';
 import type { HeaderContactSelected } from '../interfaces/headerContactSelected.interface';
 
+
+
 export const useChatMessages = (
     clientRef: React.MutableRefObject<any>, // Recibimos la ref del otro hook
     isConnected: boolean,
     user: any // Tu usuario autenticado (para el envío optimista)
 ) => {
     const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
+    const audioNotificacion = useMemo(() => new Audio('/sounds/new-notification-3-398649.mp3'), []);
 
     // --- ESTADOS ---
     const [listaDeContactos, setListaDeContactos] = useState<TypeContacto[]>([]);
@@ -101,6 +104,9 @@ export const useChatMessages = (
             notificarEntrega(notificacion.id);
         }
 
+        audioNotificacion.currentTime = 0; // Reinicia el audio por si llega otro mensaje rápido
+        audioNotificacion.play().catch(e => console.log("Esperando interacción del usuario..." +e));
+
         // --- CORRECCIÓN AQUÍ: Actualización completa del Sidebar ---
         setListaDeContactos(prev => {
             const index = prev.findIndex(c => String(c.chat_id) === String(notificacion.chatId));
@@ -127,6 +133,8 @@ export const useChatMessages = (
 
             return nuevaLista;
         });
+
+        
 
     }, [clientRef]);
 
