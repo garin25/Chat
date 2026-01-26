@@ -1,6 +1,7 @@
 package com.example.demo.dominio;
 
 import com.example.demo.dto.*;
+import com.example.demo.dto.mappers.BusquedaMensajeMapper;
 import com.example.demo.dto.mappers.MensajeMapper;
 import com.example.demo.entidades.*;
 import com.example.demo.entidades.enums.EstadoMensaje;
@@ -31,6 +32,8 @@ public class ServicioChatImpl {
     private RepositorioMensaje repositorioMensaje;
     @Autowired
     private MensajeMapper mensajeMapper;
+    @Autowired
+    private BusquedaMensajeMapper busquedaMensajeMapper;
 
 
     public List<ChatSidebarDTO> getSidebarChats(Long miId) {
@@ -106,23 +109,6 @@ public class ServicioChatImpl {
 
         // Convertimos la lista de Entidades a DTOs
         return mensajeMapper.toDtoList(mensajes);
-    }
-
-    private MensajeDTO convertirADTO(Mensaje m) {
-        MensajeDTO dto = new MensajeDTO();
-        dto.setId(m.getId());
-        dto.setContenido(m.getContenido());
-        dto.setSentAt(m.getSentAt());
-        dto.setChatId(m.getChat().getId());
-        dto.setEstado(m.getEstado());
-
-        MensajeDTO.SenderDTO sender = new MensajeDTO.SenderDTO();
-        sender.setId(m.getSender().getId());
-        sender.setNombre(m.getSender().getNombre());
-        sender.setAvatarUrl(m.getSender().getAvatarUrl());
-
-        dto.setSender(sender);
-        return dto;
     }
 
     public Mensaje enviarAlChat(Long miId, Long chatId, String contenido) {
@@ -281,9 +267,8 @@ public class ServicioChatImpl {
         if(!esParticipante){
             throw new RecursoNoEncontradoException("El usuario no participa en ese chat");
         }
-
         List<Mensaje>mensajes =  repositorioMensaje.findAllByChatIdOrderBySentAtAsc(chatId);
-        return mensajes.stream().map(this::convertirADTO).collect(Collectors.toList());
+        return mensajeMapper.toDtoList(mensajes);
     }
 
     public Mensaje findMensajeById(Long id){
@@ -291,5 +276,12 @@ public class ServicioChatImpl {
     }
      public Mensaje saveMensaje(Mensaje mensaje){
         return repositorioMensaje.save(mensaje);
+    }
+
+    public List<BusquedaResponseDTO> buscarCoincidencias(Usuario yo, BusquedaDTO body) {
+        //buscar mensajes dondo yo sea el emisor o receptor donde el mensaje contenga ese string
+        //buscar mensajes de chat donde sea participante que contenga ese string
+        List<Mensaje> mensajes = repositorioMensaje.buscarCoincidencias(yo.getId(),body.getData());
+        return busquedaMensajeMapper.toDtoList(mensajes);
     }
 }

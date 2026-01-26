@@ -507,6 +507,38 @@ input::placeholder {
     cursor: not-allowed;
 }
 
+/* El contenedor circular */
+.custom-spinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid rgba(0, 0, 0, 0.1);
+  border-top: 3px solid #3498db; /* Color azul, podés cambiarlo */
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.search-results-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 10;
+    animation: fadeIn 0.2s ease-in-out;
+    background-color: #111b21;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* La animación de rotación */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
 /* --- MOBILE (Pantallas menores a 768px) --- */
 @media (max-width: 768px) {
     

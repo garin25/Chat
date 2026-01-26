@@ -194,4 +194,11 @@ public class ControladorChat {
         );
     }
 
+    @PostMapping("/buscar")
+    public ResponseEntity<?> buscarCoincidencias(
+            @RequestBody @Valid BusquedaDTO body,
+            @UsuarioAutenticado Usuario yo
+    ) {
+        return ResponseEntity.ok(servicioChat.buscarCoincidencias(yo, body));
+    }
 }

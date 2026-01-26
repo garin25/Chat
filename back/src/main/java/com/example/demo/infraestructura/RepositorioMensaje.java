@@ -2,6 +2,7 @@ package com.example.demo.infraestructura;
 
 import com.example.demo.entidades.Mensaje;
 import com.example.demo.entidades.enums.EstadoMensaje;
+import jakarta.validation.constraints.NotEmpty;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -30,4 +31,9 @@ public interface RepositorioMensaje  extends JpaRepository<Mensaje,Long> {
     // (o sea, buscamos ENVIADO o ENTREGADO)
     List<Mensaje> findByChatIdAndSenderIdNotAndEstadoNot(Long chatId, Long lectorId, EstadoMensaje estadoMensaje);
 
+    @Query("SELECT m FROM Mensaje m " +
+            "JOIN m.chat c " +
+            "WHERE c.id IN (SELECT p.chat.id FROM Participante p WHERE p.usuario.id = :miId)" +
+            "AND m.contenido  LIKE :busqueda ")
+    List<Mensaje> buscarCoincidencias(@Param("miId") Long miId, @Param("busqueda")String data);
 }
