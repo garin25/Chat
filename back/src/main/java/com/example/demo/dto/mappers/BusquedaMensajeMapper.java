@@ -8,6 +8,7 @@ import org.mapstruct.Mapping;
 import java.util.List;
 @Mapper(componentModel = "spring")
 public interface BusquedaMensajeMapper {
+    @Mapping(target = "chatId", source = "chat.id")
     // Aquí le decimos: "buscá en el objeto sender el atributo nombre"
     @Mapping(source = "sender.nombre", target = "nombre")
     BusquedaResponseDTO toDto(Mensaje mensaje);

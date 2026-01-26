@@ -5,6 +5,7 @@ import type { MessageFront } from '../interfaces/messageFront.interface';
 import type { MessageDTO } from '../interfaces/message.dto.socket.interface';
 import type { EstadoMensajeDTO } from '../interfaces/estadoMensajeDTO.interface';
 import type { HeaderContactSelected } from '../interfaces/headerContactSelected.interface';
+import { ChatService } from '../services/chat.service';
 
 
 
@@ -268,7 +269,8 @@ export const useChatMessages = (
 
     // --- 5. ACCIONES (API PÚBLICA DEL HOOK) ---
 
-    const seleccionarChat = (chatId: number | null) => {
+    const seleccionarChat = async(chatId: number | null) => {
+        console.log("Chat id seleccionado desde lista de contactos " + chatId);
 
         // 2. Si es null, limpiamos el estado y salimos (Early Return)
         if (chatId === null) {
@@ -289,7 +291,9 @@ export const useChatMessages = (
        // ChatService.marcarComoLeidos(chatId); // Tu servicio existente
 
         // Setear Header
-        const contacto = listaDeContactos.find(c => c.chat_id === chatId);
+        // En tu wsp.tsx
+const contacto = listaDeContactos.find(c => c.chat_id === chatId) 
+                 || await ChatService.obtenerInfoChat(chatId);
         if (contacto) {
             setHeaderContactSelected({
                 avatar_url: contacto.avatar_url,

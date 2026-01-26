@@ -517,6 +517,13 @@ input::placeholder {
   animation: spin 0.8s linear infinite;
 }
 
+.sidebar-content-wrapper {
+    position: relative;
+    flex: 1; /* Ocupa todo el alto restante */
+    overflow: hidden; /* IMPORTANTE: Para que nada se escape */
+    display: flex;
+    flex-direction: column;
+}
 .search-results-overlay {
     position: absolute;
     top: 0;
@@ -526,6 +533,7 @@ input::placeholder {
     z-index: 10;
     animation: fadeIn 0.2s ease-in-out;
     background-color: #111b21;
+    overflow: auto;
 }
 
 @keyframes fadeIn {

@@ -92,7 +92,7 @@ export const Wsp = () => {
           onNewGroup={() => setIsOpenModalGroup(true)}
           obtenerCoincidencias={obtenerCoincidencias}
         />
-        <div className="sidebar-content-wrapper" style={{ position: 'relative' }}>
+        <div className="sidebar-content-wrapper">
           <ListaDeContactos
             creandoGrupo={isCreandoGrupo}
             seleccionados={seleccionados}
@@ -102,7 +102,7 @@ export const Wsp = () => {
           />
           {enBusqueda && 
           <div className="search-results-overlay">
-             <Busqueda coincidencias={coincidencias} cargando={cargandoCoincidencias} />
+             <Busqueda coincidencias={coincidencias} cargando={cargandoCoincidencias} seleccionarChat={seleccionarChat}/>
           </div>}
         </div>
 

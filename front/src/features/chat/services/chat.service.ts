@@ -67,7 +67,6 @@ export const ChatService = {
         }
     },
     buscar: async (data: string | undefined) => {
-        console.log("fetch busqueda");
         try {
             const token = localStorage.getItem("token");
 
@@ -78,6 +77,25 @@ export const ChatService = {
                     'Authorization': `Bearer ${token}`
                 },
                 body: JSON.stringify({data:data}),
+            });
+            const respuesta = await response.json();
+            return respuesta;
+
+        } catch (error) {
+            console.error("Error de red:", error);
+            alert("No se pudo conectar con el servidor");
+        }
+    },
+    obtenerInfoChat: async (chatId: number) => {
+        try {
+            const token = localStorage.getItem("token");
+
+            const response = await fetch(API_URL + '/api/chats/'+chatId, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
             });
             const respuesta = await response.json();
             return respuesta;

@@ -3,4 +3,5 @@ export interface BusquedaDTO{
     nombre:string,
     contenido:string,
     sentAt:string
+    chatId:number
 }

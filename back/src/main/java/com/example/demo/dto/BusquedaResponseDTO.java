@@ -16,4 +16,5 @@ public class BusquedaResponseDTO {
     private String contenido;
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime sentAt;
+    private Long chatId;
 }

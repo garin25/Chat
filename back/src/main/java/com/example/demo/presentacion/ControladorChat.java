@@ -201,4 +201,9 @@ public class ControladorChat {
     ) {
         return ResponseEntity.ok(servicioChat.buscarCoincidencias(yo, body));
     }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<?> obtenerDetalleChat(@PathVariable Long id ,@UsuarioAutenticado Usuario yo) {
+        return ResponseEntity.ok(servicioChat.getChatHeaderInfo(id,yo.getId()));
+    }
 }

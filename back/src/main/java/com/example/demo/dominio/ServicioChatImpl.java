@@ -37,71 +37,75 @@ public class ServicioChatImpl {
 
 
     public List<ChatSidebarDTO> getSidebarChats(Long miId) {
-        List<ChatSidebarDTO> respuesta = new ArrayList<>();
-
-        // 1. Buscamos los chats (Tu consulta actual)
         List<Chat> chats = repositorioChat.encontrarMisChatsCompletos(miId);
+        Map<Long, String> mapaDeAlias = obtenerMapaDeAlias(miId);
 
-        // 2. NUEVO: Buscamos TUS contactos (Agenda) para tener los alias a mano
-        // Esto es muy rápido, es una sola consulta simple.
-        List<Contacto> misContactos = repositorioContacto.findAllByTitularId(miId);
+        return chats.stream()
+                .map(chat -> mapearChatADTO(chat, miId, mapaDeAlias))
+                .collect(Collectors.toList());
+    }
 
-        // 3. OPTIMIZACIÓN: Convertimos la lista a un Map para búsqueda instantánea
-        // Clave: ID del Usuario (el otro) -> Valor: El Alias que le pusiste
-        Map<Long, String> mapaDeAlias = misContactos.stream()
+    /**
+     * Obtiene la info de UN solo chat (para el Header al buscar)
+     */
+    public ChatSidebarDTO getChatHeaderInfo(Long chatId, Long miId) {
+        Chat chat = repositorioChat.findById(chatId)
+                .orElseThrow(() -> new RuntimeException("Chat no encontrado"));
+
+        Map<Long, String> mapaDeAlias = obtenerMapaDeAlias(miId);
+        return mapearChatADTO(chat, miId, mapaDeAlias);
+    }
+
+    /**
+     * Lógica centralizada de mapeo (El corazón del refactor)
+     */
+    private ChatSidebarDTO mapearChatADTO(Chat chat, Long miId, Map<Long, String> mapaDeAlias) {
+        ChatSidebarDTO dto = new ChatSidebarDTO();
+        dto.setChatId(String.valueOf(chat.getId()));
+        dto.setUltimoMensaje(chat.getUltimoMensajeContenido());
+        dto.setUltimoMensajeSenderId(chat.getUltimoMensajeSenderId());
+        dto.setUltimoMensajeEstado(String.valueOf(chat.getUltimoMensajeEstado()));
+        // Agregá aquí la fecha si ya la tenés en la entidad
+        // dto.setUltimoMensajeFecha(chat.getUltimoMensajeFecha());
+
+        boolean esGrupo = (chat.getNombre() != null && !chat.getNombre().isEmpty())
+                || chat.getParticipantes().size() > 2;
+
+        if (esGrupo) {
+            dto.setTipo("group");
+            dto.setNombre(chat.getNombre());
+            dto.setAvatarUrl(chat.getAvatarUrl());
+        } else {
+            dto.setTipo("private");
+            Usuario otroUsuario = chat.getParticipantes().stream()
+                    .map(Participante::getUsuario)
+                    .filter(u -> !u.getId().equals(miId))
+                    .findFirst()
+                    .orElse(null);
+
+            if (otroUsuario != null) {
+                // Aplicar Alias o Nombre Real
+                String nombreAMostrar = mapaDeAlias.getOrDefault(otroUsuario.getId(), otroUsuario.getNombre());
+                dto.setNombre(nombreAMostrar);
+                dto.setAvatarUrl(otroUsuario.getAvatarUrl());
+                dto.setUsuarioId(String.valueOf(otroUsuario.getId()));
+                dto.setEstado(otroUsuario.getEstado());
+            }
+        }
+        return dto;
+    }
+
+    /**
+     * Helper para obtener los alias del usuario
+     */
+    private Map<Long, String> obtenerMapaDeAlias(Long miId) {
+        return repositorioContacto.findAllByTitularId(miId).stream()
                 .filter(c -> c.getAlias() != null && !c.getAlias().isEmpty())
                 .collect(Collectors.toMap(
-                        c -> c.getContactoUsuario().getId(), // Key
-                        Contacto::getAlias,                  // Value
-                        (existente, reemplazo) -> existente  // (Opcional) Por si hay duplicados, se queda con el primero
+                        c -> c.getContactoUsuario().getId(),
+                        Contacto::getAlias,
+                        (existente, reemplazo) -> existente
                 ));
-
-        // 4. Procesamos los chats
-        for (Chat chat : chats) {
-
-            ChatSidebarDTO dto = new ChatSidebarDTO();
-            dto.setChatId(String.valueOf(chat.getId()));
-            boolean esGrupo = (chat.getNombre() != null && !chat.getNombre().isEmpty())
-                    || chat.getParticipantes().size() > 2;
-
-            dto.setUltimoMensaje(chat.getUltimoMensajeContenido());
-            dto.setUltimoMensajeSenderId(chat.getUltimoMensajeSenderId());
-            dto.setUltimoMensajeEstado(String.valueOf(chat.getUltimoMensajeEstado()));
-            //aca podria agregar al dto la hora del ultimo mensaje
-
-            if (esGrupo) {
-                // ... lógica de grupo ...
-                dto.setNombre(chat.getNombre());
-                dto.setAvatarUrl(chat.getAvatarUrl());
-            } else {
-                // === ES UN CHAT PRIVADO ===
-                dto.setTipo("private");
-
-                // Buscamos al OTRO participante
-                Usuario otroUsuario = chat.getParticipantes().stream()
-                        .map(p -> p.getUsuario())
-                        .filter(u -> !u.getId().equals(miId))
-                        .findFirst()
-                        .orElse(null);
-
-                if (otroUsuario != null) {
-                    // 1. ¿Lo tengo agendado? (Busco su ID en mi mapa de alias)
-                    if (mapaDeAlias.containsKey(otroUsuario.getId())) {
-                        // SÍ: Uso el Alias ("Juan Mecánico")
-                        dto.setNombre(mapaDeAlias.get(otroUsuario.getId()));
-                    } else {
-                        // NO: Uso su nombre real ("Juan Perez") o el teléfono
-                        dto.setNombre(otroUsuario.getNombre());
-                    }
-
-                    dto.setAvatarUrl(otroUsuario.getAvatarUrl());
-                    dto.setUsuarioId(String.valueOf(otroUsuario.getId()));
-                    dto.setEstado(otroUsuario.getEstado());
-                }
-            }
-            respuesta.add(dto);
-        }
-        return respuesta;
     }
 
     public List<MensajeDTO> getMensajesParaElNum(Long miId) {
