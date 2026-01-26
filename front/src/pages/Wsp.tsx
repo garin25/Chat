@@ -33,7 +33,9 @@ export const Wsp = () => {
     headerContactSelected,
     seleccionarChat,
     enviarMensaje,
-    recargarContactos
+    recargarContactos,
+    mensajeIdParaEnfocar,
+    setMensajeIdParaEnfocar
   } = useChatMessages(clientRef, isConnected, user);
 
   // 3. Hook de Grupos (Feature: Groups)
@@ -127,6 +129,8 @@ export const Wsp = () => {
             onBack={handleVolver}
             clientRef={clientRef}
             isConnected={isConnected}
+            mensajeIdParaEnfocar={mensajeIdParaEnfocar}
+            setMensajeIdParaEnfocar={setMensajeIdParaEnfocar}
           />
         ) : (
           <div className="placeholder-desktop">Selecciona un chat</div>

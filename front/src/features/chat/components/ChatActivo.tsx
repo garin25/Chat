@@ -15,13 +15,15 @@ interface ChatProps {
     headerContactSelected: HeaderContactSelected | null,
     onBack: () => void,
     clientRef: React.MutableRefObject<any>,
-    isConnected: boolean;
+    isConnected: boolean,
+    mensajeIdParaEnfocar: number | null,
+    setMensajeIdParaEnfocar:(id:number|null)=>void;
 }
-export const ChatActivo = ({ idChatSeleccionado, enviarMensaje, mensajesDelChat, headerContactSelected, onBack, clientRef, isConnected }: ChatProps) => {
+export const ChatActivo = ({ idChatSeleccionado, enviarMensaje, mensajesDelChat, headerContactSelected, onBack, clientRef, isConnected, mensajeIdParaEnfocar,setMensajeIdParaEnfocar }: ChatProps) => {
     const { user } = useAuth();
-    console.log({user});
+    console.log({ user });
     const messagesEndRef = useRef<HTMLDivElement>(null);
-    const { usuarioEscribiendo} = useEscribiendo(idChatSeleccionado, clientRef, user);
+    const { usuarioEscribiendo } = useEscribiendo(idChatSeleccionado, clientRef, user);
 
     // 1. Extraemos el ID solo si es chat privado
     const targetUserId = headerContactSelected?.tipo === 'private'
@@ -44,6 +46,26 @@ export const ChatActivo = ({ idChatSeleccionado, enviarMensaje, mensajesDelChat,
         // Ejecutamos el scroll
         scrollToBottom();
     }, [mensajesDelChat, idChatSeleccionado]); // <--- IMPORTANTE: Dependencias
+
+    useEffect(() => {
+        if (mensajeIdParaEnfocar && mensajesDelChat !=null) {
+            // Buscamos el div del mensaje por su ID
+            const elemento = document.getElementById(`msg-${mensajeIdParaEnfocar}`);
+
+            if (elemento) {
+                elemento.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+                // Le damos un toque visual para que se note cuál es
+                elemento.classList.add('mensaje-resaltado');
+
+                // Limpiamos el estado después de scrollear
+                setTimeout(() => {
+                    elemento.classList.remove('mensaje-resaltado');
+                    setMensajeIdParaEnfocar(null);
+                }, 2000);
+            }
+        }
+    }, [mensajeIdParaEnfocar, mensajesDelChat]); // Se dispara cuando cambia el ID o cargan los mensajes
     return (
 
         <div className="chat-window">
@@ -63,7 +85,7 @@ export const ChatActivo = ({ idChatSeleccionado, enviarMensaje, mensajesDelChat,
                         <br />
                         <span className="header-subtitle">
                             {/* CASO 1: CHAT PRIVADO */}
-                            {headerContactSelected?.tipo === 'private' && !usuarioEscribiendo &&(
+                            {headerContactSelected?.tipo === 'private' && !usuarioEscribiendo && (
                                 <StatusEnLinea estado={estado} ultimaVez={ultimaVez} />
                             )}
 
@@ -95,6 +117,7 @@ export const ChatActivo = ({ idChatSeleccionado, enviarMensaje, mensajesDelChat,
                     return (
                         <Mensaje
                             key={mensaje.id}
+                            id={mensaje.id}
                             contenido={mensaje.contenido}
                             nombre={mensaje.sender.nombre || 'Desconocido'}
                             esMio={soyYo}

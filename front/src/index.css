@@ -288,6 +288,12 @@ body {
   margin-bottom: 4px;
 }
 
+/* En tu archivo .css */
+.mensaje-resaltado {
+    background-color: #2a3942 !important; /* Un color que resalte */
+    transition: background-color 0.5s ease;
+    border-radius: 8px;
+}
 
 /* --- ÁREA DEL INPUT (Fija abajo) --- */
 .chat-input-area {

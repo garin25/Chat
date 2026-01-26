@@ -1,6 +1,7 @@
 import './Mensaje.css'; 
 
 interface MensajeProps {
+    id:number,
     contenido: string;
     nombre: string;
     esMio: boolean;
@@ -8,7 +9,7 @@ interface MensajeProps {
     sentAt:string;
 }
 
-export const Mensaje = ({ contenido, nombre, esMio, estado,sentAt }: MensajeProps) => {
+export const Mensaje = ({id, contenido, nombre, esMio, estado,sentAt }: MensajeProps) => {
 
 const fecha = new Date(sentAt);
 const hora = fecha.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -30,7 +31,7 @@ const hora = fecha.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }
     };
 
     return (
-        <div className={`mensaje-container ${esMio ? 'enviado' : 'recibido'}`}>
+        <div id={`msg-${id}`} className={`mensaje-container ${esMio ? 'enviado' : 'recibido'}`}>
             <div className="mensaje-contenido">
                 {/* Solo mostramos el nombre si NO es mío (opcional) */}
                 {!esMio && <small className="mensaje-autor">{nombre}</small>}

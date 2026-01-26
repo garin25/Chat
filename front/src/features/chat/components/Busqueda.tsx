@@ -5,7 +5,7 @@ import { useAuth } from "@/features/auth/AuthContext";
 interface Props {
     coincidencias: BusquedaDTO[],
     cargando: boolean,
-    seleccionarChat: (id: number) => void
+    seleccionarChat: (chatid: number,id:number) => void
 }
 
 export const Busqueda = ({ coincidencias, cargando, seleccionarChat }: Props) => {
@@ -19,7 +19,7 @@ export const Busqueda = ({ coincidencias, cargando, seleccionarChat }: Props) =>
                         return (
                             <div key={mensaje.id} className="contact-item" onClick={() => {
                                 console.log("Chat id seleccionado desde coincidencias " + mensaje.chatId);
-                                    seleccionarChat(mensaje.chatId);
+                                    seleccionarChat(mensaje.chatId,mensaje.id);
                             }} >
 
                                 <div className="contact-content">

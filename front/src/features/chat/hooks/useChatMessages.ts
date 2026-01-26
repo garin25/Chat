@@ -22,6 +22,7 @@ export const useChatMessages = (
     const [historialDeMensajes, setHistorialDeMensajes] = useState<Message[]>([]);
     const [idChatSeleccionado, setIdChatSeleccionado] = useState<number | null>(null);
     const [headerContactSelected, setHeaderContactSelected] = useState<HeaderContactSelected | null>(null);
+    const [mensajeIdParaEnfocar, setMensajeIdParaEnfocar] = useState<number | null>(null);
 
     // Refs para evitar "stale closures" en los sockets
     const chatActivoRef = useRef<number | null>(null);
@@ -106,7 +107,7 @@ export const useChatMessages = (
         }
 
         audioNotificacion.currentTime = 0; // Reinicia el audio por si llega otro mensaje rápido
-        audioNotificacion.play().catch(e => console.log("Esperando interacción del usuario..." +e));
+        audioNotificacion.play().catch(e => console.log("Esperando interacción del usuario..." + e));
 
         // --- CORRECCIÓN AQUÍ: Actualización completa del Sidebar ---
         setListaDeContactos(prev => {
@@ -135,7 +136,7 @@ export const useChatMessages = (
             return nuevaLista;
         });
 
-        
+
 
     }, [clientRef]);
 
@@ -269,7 +270,7 @@ export const useChatMessages = (
 
     // --- 5. ACCIONES (API PÚBLICA DEL HOOK) ---
 
-    const seleccionarChat = async(chatId: number | null) => {
+    const seleccionarChat = async (chatId: number | null, mensajeId?: number) => {
         console.log("Chat id seleccionado desde lista de contactos " + chatId);
 
         // 2. Si es null, limpiamos el estado y salimos (Early Return)
@@ -288,20 +289,24 @@ export const useChatMessages = (
 
         // Avisar al backend
         notificarLectura(chatId);
-       // ChatService.marcarComoLeidos(chatId); // Tu servicio existente
+        // ChatService.marcarComoLeidos(chatId); // Tu servicio existente
 
         // Setear Header
         // En tu wsp.tsx
-const contacto = listaDeContactos.find(c => c.chat_id === chatId) 
-                 || await ChatService.obtenerInfoChat(chatId);
+        const contacto = listaDeContactos.find(c => c.chat_id === chatId)
+            || await ChatService.obtenerInfoChat(chatId);
         if (contacto) {
             setHeaderContactSelected({
                 avatar_url: contacto.avatar_url,
                 nombre: contacto.nombre,
                 estado: contacto.estado,
                 usuario_id: contacto.usuario_id,
-                tipo:contacto.tipo
+                tipo: contacto.tipo
             });
+        }
+        // para hacer scroll en el mensaje seleccionado
+        if (mensajeId) {
+            setMensajeIdParaEnfocar(mensajeId);
         }
     };
 
@@ -368,6 +373,8 @@ const contacto = listaDeContactos.find(c => c.chat_id === chatId)
         headerContactSelected,
         seleccionarChat,
         enviarMensaje,
-        recargarContactos
+        recargarContactos,
+        mensajeIdParaEnfocar,
+        setMensajeIdParaEnfocar
     };
 };
