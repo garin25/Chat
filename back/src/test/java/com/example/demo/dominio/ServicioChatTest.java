@@ -212,26 +212,6 @@ class ServicioChatTest {
         assertEquals(resultado.get(1).getEstado(), EstadoMensaje.LEIDO);
 
     }
-
-    /*@Test
-    void crearGrupo_LanzaExcepcion_enCasoDeNombreNulo() {
-        Usuario usuario = new Usuario();
-        usuario.setId(1L);
-        usuario.setNombre("yo");
-        usuario.setTelefono("1123234242");
-
-        List<Long>integrantes = new ArrayList<>();
-        integrantes.add(2L);
-        integrantes.add(3L);
-        NewGroupDTO dto = new NewGroupDTO();
-        dto.setNombreGrupo(null);
-        dto.setIntegrantes(integrantes);
-
-        assertThatThrownBy(() -> servicioChat.crearGrupo(usuario, dto))
-                .isInstanceOf(RecursoNoEncontradoException.class)
-                .hasMessage("No se encontraron los integrantes");
-    }
-
     @Test
     void crearGrupo_LanzaExcepcion_enCasoDeIntegrantesEmpty() {
         Usuario usuario = new Usuario();
@@ -263,12 +243,13 @@ class ServicioChatTest {
         dto.setNombreGrupo("Grupo 1");
         dto.setIntegrantes(integrantes);
 
+        when(repositorioLogin.findById(usuario.getId())).thenReturn(Optional.of(usuario));
         Mockito.when(repositorioLogin.findById(2L))
                 .thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> servicioChat.crearGrupo(usuario, dto))
                 .isInstanceOf(RecursoNoEncontradoException.class)
-                .hasMessage("No se encontraron los integrantes");
+                .hasMessage("❌ ERROR CRÍTICO: No existe el usuario con ID 2 en la tabla Usuarios.");
     }
 
 
@@ -303,6 +284,8 @@ class ServicioChatTest {
         chat.setAvatarUrl("https://i.pravatar.cc/150?u="+dto.getNombreGrupo());
 
 
+        Mockito.when(repositorioLogin.findById(1L))
+                .thenReturn(Optional.of(usuario));
 
         Mockito.when(repositorioLogin.findById(2L))
                 .thenReturn(Optional.of(usuario2));
@@ -319,6 +302,5 @@ class ServicioChatTest {
         assertEquals(chatReturning.getTipo(), chat.getTipo());
         assertEquals(chatReturning.getNombre(), chat.getNombre());
         assertEquals(chatReturning.getAvatarUrl(), chat.getAvatarUrl());
-
-    }*/
+    }
 }

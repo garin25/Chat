@@ -42,8 +42,6 @@ class ControladorChatTest {
     @Autowired
     private MockMvc mockMvc;
 
-    // Si estás en Spring Boot 3.4+ usa @MockitoBean.
-    // Si te da error de compilación (porque usas una versión anterior), vuelve a @MockBean.
     @MockitoBean
     private ServicioChatImpl servicioChat;
     @MockitoBean

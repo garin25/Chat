@@ -207,7 +207,7 @@ public class ServicioChatImpl {
         for (Long userId : participantesUnicos) {
             System.out.println("🔍 Buscando usuario con ID: " + userId);
             Usuario usuario = repositorioLogin.findById(userId)
-                    .orElseThrow(() ->new RuntimeException("❌ ERROR CRÍTICO: No existe el usuario con ID " + userId + " en la tabla Usuarios."));
+                    .orElseThrow(() ->new RecursoNoEncontradoException("❌ ERROR CRÍTICO: No existe el usuario con ID " + userId + " en la tabla Usuarios."));
 
             Participante participante = new Participante();
             participante.setChat(chatReturning);

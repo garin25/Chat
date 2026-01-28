@@ -33,11 +33,9 @@ public class ServicioLoginImpl {
     @Transactional // ¡Muy importante para que todo se guarde o nada se guarde!
     public Usuario registrar(NewUsuarioDTO dto) {
 
-        String hash = passwordEncoder.encode(dto.getPassword());
-
         // 1. Validaciones
         if (repositorioLogin.findByTelefono(dto.getTelefono()).isPresent()) {
-            throw new EmailExistenteException("El usuario con ese telefono ya existe");
+            throw new TelefonoExistenteException("El usuario con ese telefono ya existe");
         }
         if (dto.getPassword().length() < 6) {
             throw new ContraseniaCortaException("La contraseña debe tener al menos 6 caracteres");
@@ -63,7 +61,7 @@ public class ServicioLoginImpl {
     
     public AuthResponse loginWsp(AuthRequest request) {
         Usuario user = repositorioLogin.findByTelefono(request.getTelefono())
-                .orElseThrow(() -> new EmailNoExistenteException("El telefono no existe"));
+                .orElseThrow(() -> new TelefonoNoExistenteException("El telefono no existe"));
 
         // ¡PASO CRÍTICO! Comparamos la contraseña usando el codificador
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {

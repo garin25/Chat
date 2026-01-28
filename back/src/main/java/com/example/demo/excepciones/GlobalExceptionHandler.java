@@ -37,14 +37,14 @@ public class GlobalExceptionHandler {
 
     // Manejar errores de negocio / validación (400)
     // Ej: EmailExistenteException, ContraseniaCortaException
-    @ExceptionHandler({EmailExistenteException.class, ContraseniaCortaException.class})
+    @ExceptionHandler({TelefonoExistenteException.class, ContraseniaCortaException.class})
     public ResponseEntity<ErrorDTO> manejarErrorDeNegocio(RuntimeException ex) {
         ErrorDTO error = new ErrorDTO(ex.getMessage(), HttpStatus.BAD_REQUEST.value());
         return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
     }
 
     // Manejar credenciales inválidas (401)
-    @ExceptionHandler({EmailNoExistenteException.class, ContraseniaIncorrectaException.class})
+    @ExceptionHandler({TelefonoNoExistenteException.class, ContraseniaIncorrectaException.class})
     public ResponseEntity<ErrorDTO> manejarErrorDeAuth(RuntimeException ex) {
         ErrorDTO error = new ErrorDTO("Credenciales inválidas", HttpStatus.UNAUTHORIZED.value());
         return new ResponseEntity<>(error, HttpStatus.UNAUTHORIZED);
