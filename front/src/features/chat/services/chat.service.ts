@@ -1,108 +1,33 @@
 import type { NewContactFormValues } from "@/features/groups/components/ModalNewContact";
 import type { NuevoGrupo } from "@/interfaces/nuevoGrupo.interface";
-
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
+import { apiInstance } from "@/services/api";
 
 export const ChatService = {
+    
     agendarContacto: async (data: NewContactFormValues) => {
-        try {
-            const token = localStorage.getItem("token");
-
-            const response = await fetch(API_URL + '/api/chats/new', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify(data),
-            });
-
-            console.log(response); // para que no se queje en deploy
-
-
-        } catch (error) {
-            console.error("Error de red:", error);
-            alert("No se pudo conectar con el servidor");
-        }
-    }
-
-    , crearGrupo: async (data: NuevoGrupo) => {
-        try {
-            const token = localStorage.getItem("token");
-
-            const response = await fetch(API_URL + '/api/chats/group', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify(data),
-            });
-
-            console.log({response});
-
-
-        } catch (error) {
-            console.error("Error de red:", error);
-            alert("No se pudo conectar con el servidor");
-        }
-    }
-    , marcarComoLeidos: async (chatId: number) => {
-        try {
-
-            const token = localStorage.getItem("token");
-
-            const response = await fetch(API_URL +`/api/chats/${chatId}/leido`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-             console.log({response});
-
-        } catch (error) {
-            console.error("Error de red:", error);
-            alert("No se pudo conectar con el servidor");
-        }
+        // Axios serializa a JSON automáticamente, no hace falta JSON.stringify
+        const response = await apiInstance.post('/api/chats/new', data);
+        return response.data;
     },
-    buscar: async (data: string | undefined) => {
-        try {
-            const token = localStorage.getItem("token");
 
-            const response = await fetch(API_URL + '/api/chats/buscar', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({data:data}),
-            });
-            const respuesta = await response.json();
-            return respuesta;
-
-        } catch (error) {
-            console.error("Error de red:", error);
-            alert("No se pudo conectar con el servidor");
-        }
+    crearGrupo: async (data: NuevoGrupo) => {
+        const response = await apiInstance.post('/api/chats/group', data);
+        return response.data;
     },
+
+    marcarComoLeidos: async (chatId: number) => {
+        const response = await apiInstance.post(`/api/chats/${chatId}/leido`);
+        return response.data;
+    },
+
+    buscar: async (query: string | undefined) => {
+        // Mantenemos tu estructura de body { data: query }
+        const response = await apiInstance.post('/api/chats/buscar', { data: query });
+        return response.data;
+    },
+
     obtenerInfoChat: async (chatId: number) => {
-        try {
-            const token = localStorage.getItem("token");
-
-            const response = await fetch(API_URL + '/api/chats/'+chatId, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-            });
-            const respuesta = await response.json();
-            return respuesta;
-
-        } catch (error) {
-            console.error("Error de red:", error);
-            alert("No se pudo conectar con el servidor");
-        }
+        const response = await apiInstance.get(`/api/chats/${chatId}`);
+        return response.data;
     }
-}
+};
