@@ -13,6 +13,8 @@ export const apiInstance = axios.create({
 // Interceptor: Inyecta el token automáticamente en cada petición
 apiInstance.interceptors.request.use((config) => {
     const token = localStorage.getItem("token");
+
+    console.log("Interceptor Axios:", token ? "Token encontrado" : "SIN TOKEN"); // AGREGA ESTO
     if (token) {
         config.headers.Authorization = `Bearer ${token}`;
     }

@@ -120,14 +120,47 @@ public class ControladorChat {
     ) {
         return ResponseEntity.ok(servicioChat.crearGrupo(yo, body));
     }
-
-
+    
     @PostMapping("/{chatId}/leido")
     public ResponseEntity<String> marcarMensajesComoLeidos(
             @UsuarioAutenticado Usuario yo,
             @PathVariable Long chatId
     ) {
-        servicioChat.marcarMensajesComoLeidos(chatId, yo.getId());
+        // 1. Actualizar DB y obtener mensajes actualizados
+        List<Mensaje> mensajesActualizados = servicioChat.marcarMensajesComoLeidos(chatId, yo.getId());
+
+        // Si no había nada nuevo por leer, no hacemos nada
+        if (mensajesActualizados.isEmpty()) {
+            return ResponseEntity.ok("Mensaje leido correctamente");
+        }
+
+        // Obtenemos el teléfono del REMITENTE (el otro usuario)
+        String telefonoRemitente = mensajesActualizados.get(0).getSender().getTelefono();
+
+        // --- AVISO POR WEBSOCKET PARA CADA MENSAJE ---
+        for (Mensaje msg : mensajesActualizados) {
+            EstadoMensajeDTO dtoMensaje = new EstadoMensajeDTO(
+                    msg.getId(),
+                    EstadoMensaje.LEIDO.name(),
+                    chatId
+            );
+
+            messagingTemplate.convertAndSendToUser(
+                    telefonoRemitente,
+                    "/queue/mensajes/cambio-estado",
+                    dtoMensaje
+            );
+        }
+
+        // --- AVISO PARA EL SIDEBAR ---
+        EstadoSidebarDTO dtoSidebar = new EstadoSidebarDTO(chatId, EstadoMensaje.LEIDO.name());
+
+        messagingTemplate.convertAndSendToUser(
+                telefonoRemitente,
+                "/queue/chat/actualizacion-estado",
+                dtoSidebar
+        );
+
         return ResponseEntity.ok("Mensaje leido correctamente");
     }
 

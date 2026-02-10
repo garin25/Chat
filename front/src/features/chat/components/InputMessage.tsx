@@ -1,81 +1,65 @@
-import { useState } from "react";
-import type { MessageFront } from "../interfaces/messageFront.interface";
-import { useEscribiendo } from "../hooks";
+import { useState,type KeyboardEvent,type ChangeEvent } from "react";
+import { useEscribiendo } from "../hooks"; 
 import { useAuth } from "@/features/auth/AuthContext";
 
 interface InputProps {
-    enviarMensaje: (nuevoTexto: MessageFront) => void,
-    idChat: number | null,
-    sender_id: number,
+    // Simplificamos las props. El input no necesita saber de 'sender_id' para enviar.
+    // Solo necesita saber qué hacer cuando hay un texto nuevo.
+    onSend: (texto: string) => void;
+    
+    idChat: number | null;
     clientRef: React.MutableRefObject<any>;
 }
-export const InputMessage = ({ enviarMensaje, idChat, sender_id, clientRef }: InputProps) => {
-    const { user } = useAuth();
 
-    const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
-    const [texto, setTexto] = useState(""); // Solo guardamos el texto
+export const InputMessage = ({ onSend, idChat, clientRef }: InputProps) => {
+    const { user } = useAuth(); // Necesario para el hook de escribiendo
+    const [texto, setTexto] = useState("");
+    
     const { notificarEscritura } = useEscribiendo(idChat, clientRef, user);
 
-    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            enviar();
-        }
-    }
-
-    const enviar = () => {
+    const handleEnviar = () => {
         if (!texto.trim()) return;
 
-        // 1. Para el Frontend (optimistic UI): Usamos el ID temporal
-        const mensajeFrontend: MessageFront = {
-            id: Date.now(),
-            sender_id: sender_id,
-            chat_id: idChat,
-            contenido: texto
-        };
+        onSend(texto);
+        setTexto("");
+        notificarEscritura("");
+    };
 
-        // Actualizamos la pantalla de inmediato
-        enviarMensaje(mensajeFrontend);
-        setTexto(""); // Limpiamos input
+    const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            handleEnviar();
+        }
+    };
 
-        // 2. Para el Backend: Solo enviamos el contenido
-        // El ID del sender lo saca del token, y el ID del chat de la URL
-        const url = `${API_URL}/api/chats/${idChat}/messages`;
-        const token = localStorage.getItem("token");
-
-        fetch(url, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({ contenido: texto }), // ✅ Solo enviamos esto
-        })
-            .then(async (res) => {
-                if (!res.ok) console.error("Error guardando mensaje");
-                // Opcional: Aquí podrías actualizar el ID temporal con el real de la DB
-            });
-    }
-
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const texto = e.target.value;
-        setTexto(texto);
-
-        // 2. Avisamos al hook que cambió el texto
-        notificarEscritura(texto);
+    const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+        const nuevoTexto = e.target.value;
+        setTexto(nuevoTexto);
+        notificarEscritura(nuevoTexto);
     };
 
     return (
-        // Usamos onKeyDown para detectar el Enter
-        <div className="chat-input-area">
-            <input
-                type="text"
-                value={texto}
-                onChange={handleInputChange}
-                onKeyDown={handleKeyDown}
-                placeholder="Escribe un mensaje..."
-                className="input-message"
-            />
+        <div className="chat-input-area p-2 border-t bg-white">
+            <div className="relative">
+                <input
+                    type="text"
+                    value={texto}
+                    onChange={handleChange}
+                    onKeyDown={handleKeyDown}
+                    placeholder="Escribe un mensaje..."
+                    className="input-message w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:border-blue-500 transition-colors"
+                    disabled={!idChat} // Deshabilitar si no hay chat seleccionado
+                />
+                
+                {/* Botón de enviar opcional (mejora UX en móvil) */}
+                <button 
+                    onClick={handleEnviar}
+                    disabled={!texto.trim()}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-blue-600 hover:text-blue-800 disabled:opacity-50 p-2"
+                >
+                    Enviar
+                </button>
+            </div>
         </div>
-    )
-}
+    );
+};

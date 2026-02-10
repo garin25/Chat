@@ -1,7 +1,6 @@
 import { useAuth } from "@/features/auth/AuthContext";
 import type { HeaderContactSelected } from "../interfaces/headerContactSelected.interface";
 import type { Message } from "../interfaces/message.interface";
-import type { MessageFront } from "../interfaces/messageFront.interface";
 import { InputMessage } from "./InputMessage"
 import { Mensaje } from "./Mensaje"
 import { useEffect, useRef } from "react";
@@ -10,18 +9,18 @@ import { StatusEnLinea } from "./StatusEnLinea";
 
 interface ChatProps {
     idChatSeleccionado: number | null,
-    enviarMensaje: (nuevoTexto: MessageFront) => void,
+    enviarMensaje: (nuevoTexto: string) => void,
     mensajesDelChat: Message[] | null,
     headerContactSelected: HeaderContactSelected | null,
     onBack: () => void,
     clientRef: React.MutableRefObject<any>,
     isConnected: boolean,
     mensajeIdParaEnfocar: number | null,
-    setMensajeIdParaEnfocar:(id:number|null)=>void;
+    setMensajeIdParaEnfocar: (id: number | null) => void;
 }
-export const ChatActivo = ({ idChatSeleccionado, enviarMensaje, mensajesDelChat, headerContactSelected, onBack, clientRef, isConnected, mensajeIdParaEnfocar,setMensajeIdParaEnfocar }: ChatProps) => {
+export const ChatActivo = ({ idChatSeleccionado, enviarMensaje, mensajesDelChat, headerContactSelected, onBack, clientRef, isConnected, mensajeIdParaEnfocar, setMensajeIdParaEnfocar }: ChatProps) => {
     const { user } = useAuth();
-    console.log({ user });
+
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const { usuarioEscribiendo } = useEscribiendo(idChatSeleccionado, clientRef, user);
 
@@ -48,7 +47,7 @@ export const ChatActivo = ({ idChatSeleccionado, enviarMensaje, mensajesDelChat,
     }, [mensajesDelChat, idChatSeleccionado]); // <--- IMPORTANTE: Dependencias
 
     useEffect(() => {
-        if (mensajeIdParaEnfocar && mensajesDelChat !=null) {
+        if (mensajeIdParaEnfocar && mensajesDelChat != null) {
             // Buscamos el div del mensaje por su ID
             const elemento = document.getElementById(`msg-${mensajeIdParaEnfocar}`);
 
@@ -65,7 +64,8 @@ export const ChatActivo = ({ idChatSeleccionado, enviarMensaje, mensajesDelChat,
                 }, 2000);
             }
         }
-    }, [mensajeIdParaEnfocar, mensajesDelChat]); // Se dispara cuando cambia el ID o cargan los mensajes
+    }, [mensajeIdParaEnfocar, mensajesDelChat]);
+
     return (
 
         <div className="chat-window">
@@ -112,7 +112,16 @@ export const ChatActivo = ({ idChatSeleccionado, enviarMensaje, mensajesDelChat,
                 {mensajesDelChat?.map(mensaje => {
                     // ¿El ID del emisor es igual a MI id (user.id)?
                     // Usamos Number() por seguridad (a veces vienen como strings "1" vs 1)
-                    const soyYo = Number(mensaje.sender.id) === Number(user?.id);
+                    // IMPORTANTE: Ignorar mensajes con ID temporal (negativo, optimistas)
+                    const esOptimista = typeof mensaje.id === 'number' && mensaje.id < 0;
+                    
+                    // Normalizar IDs a números para comparación segura
+                    const miIdNormalizado = Number(user?.id) || 0;
+                    const senderIdNormalizado = Number(mensaje.sender?.id) || 0;
+                    
+                    // Lógica final: si es optimista, aún no sabemos si es nuestro (false)
+                    // Si es real, comparamos IDs normalizados
+                    const soyYo = !esOptimista && senderIdNormalizado === miIdNormalizado;
 
                     return (
                         <Mensaje
@@ -133,8 +142,7 @@ export const ChatActivo = ({ idChatSeleccionado, enviarMensaje, mensajesDelChat,
             <div className="chat-input-area">
                 <InputMessage
                     idChat={idChatSeleccionado}
-                    sender_id={Number(user?.id)}
-                    enviarMensaje={enviarMensaje}
+                    onSend={enviarMensaje}
                     clientRef={clientRef}
                 />
             </div>

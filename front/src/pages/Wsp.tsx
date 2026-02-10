@@ -37,6 +37,7 @@ export const Wsp = () => {
     mensajeIdParaEnfocar,
     setMensajeIdParaEnfocar
   } = useChatMessages(clientRef, isConnected, user);
+   
 
   // 3. Hook de Grupos (Feature: Groups)
   const {
