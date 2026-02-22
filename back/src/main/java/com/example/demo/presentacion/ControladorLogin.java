@@ -1,7 +1,7 @@
 package com.example.demo.presentacion;
 
 import com.example.demo.config.WebSocketEventListener;
-import com.example.demo.dominio.ServicioLoginImpl;
+import com.example.demo.dominio.ServicioLogin;
 import com.example.demo.dto.AuthRequest;
 import com.example.demo.dto.AuthResponse;
 import com.example.demo.dto.NewUsuarioDTO;
@@ -21,7 +21,7 @@ import java.util.Map;
 public class ControladorLogin {
 
     @Autowired
-    private ServicioLoginImpl servicioLogin;
+    private ServicioLogin servicioLogin;
 
     // POST /api/usuarios/registrar
     @PostMapping("/registrar")

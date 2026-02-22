@@ -43,6 +43,7 @@ function LoginForm() {
                 // y actualiza el estado de toda la app.
                 login(jsonResponse.token, jsonResponse.user);
                 // 4. REDIRECCIÓN 
+                console.log("Usuario logueado" + jsonResponse.user.telefono);
                 navigate("/wsp")
 
             } else {

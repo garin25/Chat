@@ -10,6 +10,8 @@ import com.example.demo.excepciones.RecursoNoEncontradoException;
 import com.example.demo.excepciones.RecursoRepetidoException;
 import com.example.demo.infraestructura.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
@@ -18,7 +20,7 @@ import java.util.stream.Collectors;
 
 @Service
 @Transactional
-public class ServicioChatImpl {
+public class ServicioChatImpl implements ServicioChat {
 
     @Autowired
     private RepositorioChat repositorioChat;
@@ -34,8 +36,11 @@ public class ServicioChatImpl {
     private MensajeMapper mensajeMapper;
     @Autowired
     private BusquedaMensajeMapper busquedaMensajeMapper;
+    @Autowired
+    private SimpMessagingTemplate messagingTemplate;
 
 
+    @Override
     public List<ChatSidebarDTO> getSidebarChats(Long miId) {
         List<Chat> chats = repositorioChat.encontrarMisChatsCompletos(miId);
         Map<Long, String> mapaDeAlias = obtenerMapaDeAlias(miId);
@@ -48,6 +53,7 @@ public class ServicioChatImpl {
     /**
      * Obtiene la info de UN solo chat (para el Header al buscar)
      */
+    @Override
     public ChatSidebarDTO getChatHeaderInfo(Long chatId, Long miId) {
         Chat chat = repositorioChat.findById(chatId)
                 .orElseThrow(() -> new RuntimeException("Chat no encontrado"));
@@ -56,58 +62,7 @@ public class ServicioChatImpl {
         return mapearChatADTO(chat, miId, mapaDeAlias);
     }
 
-    /**
-     * Lógica centralizada de mapeo (El corazón del refactor)
-     */
-    private ChatSidebarDTO mapearChatADTO(Chat chat, Long miId, Map<Long, String> mapaDeAlias) {
-        ChatSidebarDTO dto = new ChatSidebarDTO();
-        dto.setChatId(String.valueOf(chat.getId()));
-        dto.setUltimoMensaje(chat.getUltimoMensajeContenido());
-        dto.setUltimoMensajeSenderId(chat.getUltimoMensajeSenderId());
-        dto.setUltimoMensajeEstado(String.valueOf(chat.getUltimoMensajeEstado()));
-        // Agregá aquí la fecha si ya la tenés en la entidad
-        // dto.setUltimoMensajeFecha(chat.getUltimoMensajeFecha());
-
-        boolean esGrupo = (chat.getNombre() != null && !chat.getNombre().isEmpty())
-                || chat.getParticipantes().size() > 2;
-
-        if (esGrupo) {
-            dto.setTipo("group");
-            dto.setNombre(chat.getNombre());
-            dto.setAvatarUrl(chat.getAvatarUrl());
-        } else {
-            dto.setTipo("private");
-            Usuario otroUsuario = chat.getParticipantes().stream()
-                    .map(Participante::getUsuario)
-                    .filter(u -> !u.getId().equals(miId))
-                    .findFirst()
-                    .orElse(null);
-
-            if (otroUsuario != null) {
-                // Aplicar Alias o Nombre Real
-                String nombreAMostrar = mapaDeAlias.getOrDefault(otroUsuario.getId(), otroUsuario.getNombre());
-                dto.setNombre(nombreAMostrar);
-                dto.setAvatarUrl(otroUsuario.getAvatarUrl());
-                dto.setUsuarioId(String.valueOf(otroUsuario.getId()));
-                dto.setEstado(otroUsuario.getEstado());
-            }
-        }
-        return dto;
-    }
-
-    /**
-     * Helper para obtener los alias del usuario
-     */
-    private Map<Long, String> obtenerMapaDeAlias(Long miId) {
-        return repositorioContacto.findAllByTitularId(miId).stream()
-                .filter(c -> c.getAlias() != null && !c.getAlias().isEmpty())
-                .collect(Collectors.toMap(
-                        c -> c.getContactoUsuario().getId(),
-                        Contacto::getAlias,
-                        (existente, reemplazo) -> existente
-                ));
-    }
-
+    @Override
     public List<MensajeDTO> getMensajesParaElNum(Long miId) {
         List<Mensaje> mensajes = repositorioChat.getMensajesParaElNum(miId);
 
@@ -115,6 +70,7 @@ public class ServicioChatImpl {
         return mensajeMapper.toDtoList(mensajes);
     }
 
+    @Override
     public Mensaje enviarAlChat(Long miId, Long chatId, String contenido) {
         Chat chat = repositorioChat.findById(chatId).orElseThrow();
         Optional<Usuario> usuario = repositorioLogin.findById(miId);
@@ -133,6 +89,7 @@ public class ServicioChatImpl {
     }
 
     @Transactional
+    @Override
     public Contacto agendarContacto(Usuario usuarioTitular, NewContactDTO contactoDTO) {
 
         // 1. Validar que el usuario a agendar exista
@@ -184,7 +141,8 @@ public class ServicioChatImpl {
     }
 
     @Transactional
-    public Chat crearGrupo(Usuario yo,NewGroupDTO body) {
+    @Override
+    public Chat crearGrupo(Usuario yo, NewGroupDTO body) {
         if(body.getIntegrantes().isEmpty()){
             throw new RecursoNoEncontradoException("Los integrantes son obligatorios");
         }
@@ -222,7 +180,8 @@ public class ServicioChatImpl {
         return chat;
     }
 
-    @Transactional // Importante para asegurar la integridad
+    @Transactional
+    @Override
     public List<Mensaje> marcarMensajesComoLeidos(Long chatId, Long lectorId) {
 
         // 1. Buscamos los mensajes que están pendientes de leer
@@ -266,6 +225,7 @@ public class ServicioChatImpl {
         return mensajesActualizados;
     }
 
+    @Override
     public List<MensajeDTO> getMensajesPorChat(Long miId, Long chatId) throws RecursoNoEncontradoException {
         boolean esParticipante = repositorioParticipante.existsByChatIdAndUsuarioId(chatId,miId);
         if(!esParticipante){
@@ -275,17 +235,144 @@ public class ServicioChatImpl {
         return mensajeMapper.toDtoList(mensajes);
     }
 
+    @Override
     public Mensaje findMensajeById(Long id){
         return  repositorioMensaje.findById(id).get();
     }
+     @Override
      public Mensaje saveMensaje(Mensaje mensaje){
         return repositorioMensaje.save(mensaje);
     }
 
+    @Override
     public List<BusquedaResponseDTO> buscarCoincidencias(Usuario yo, BusquedaDTO body) {
         //buscar mensajes dondo yo sea el emisor o receptor donde el mensaje contenga ese string
         //buscar mensajes de chat donde sea participante que contenga ese string
         List<Mensaje> mensajes = repositorioMensaje.buscarCoincidencias(yo.getId(),body.getData());
         return busquedaMensajeMapper.toDtoList(mensajes);
+    }
+
+    @Transactional
+    @Override
+    public NotificacionDTO procesarYEnviarMensaje(Mensaje mensajeGuardado) { // Cambié void por DTO
+
+        // 1. Convertimos a DTO (Una sola vez para usarlo en todos lados)
+        NotificacionDTO dto = new NotificacionDTO();
+        dto.setId(mensajeGuardado.getId());
+        dto.setContenido(mensajeGuardado.getContenido());
+        dto.setSentAt(mensajeGuardado.getSentAt().toString()); // Usar la fecha real del mensaje
+        dto.setChatId(mensajeGuardado.getChat().getId());
+        dto.setSenderNombre(mensajeGuardado.getSender().getNombre());
+        dto.setSenderId(mensajeGuardado.getSender().getId()); // Agregué ID por si el front lo necesita
+
+        Chat chat = mensajeGuardado.getChat();
+        List<Participante> participantes = chat.getParticipantes();
+        String telefonoRemitente = mensajeGuardado.getSender().getTelefono();
+
+        // 2. Notificaciones Privadas (Lista de contactos)
+        for (Participante integrante : participantes) {
+            String telefonoDestino = integrante.getUsuario().getTelefono();
+
+            if (!telefonoDestino.equals(telefonoRemitente)) {
+                messagingTemplate.convertAndSendToUser(
+                        telefonoDestino,
+                        "/queue/notificaciones",
+                        dto // Enviamos DTO SEGURO
+                );
+            }
+        }
+
+        // 3. Canal del Chat Activo (Para quien lo está leyendo ahora)
+        messagingTemplate.convertAndSend("/topic/chat/" + chat.getId(), dto);
+
+        return dto; // Lo devolvemos por si el Controller lo quiere usar
+    }
+
+
+        @Override
+        public String procesarLecturaYNotificar(Long chatId, Long lectorId){
+        // 1. Actualizar DB y obtener mensajes actualizados
+        List<Mensaje> mensajesActualizados = marcarMensajesComoLeidos(chatId, lectorId);
+
+        // Si no había nada nuevo por leer, no hacemos nada
+        if (mensajesActualizados.isEmpty()) {
+            return "No habia mensajes para leer";
+        }
+
+        // Obtenemos el teléfono del REMITENTE (el otro usuario)
+        String telefonoRemitente = mensajesActualizados.get(0).getSender().getTelefono();
+
+        // --- AVISO POR WEBSOCKET PARA CADA MENSAJE ---
+        for (Mensaje msg : mensajesActualizados) {
+            EstadoMensajeDTO dtoMensaje = new EstadoMensajeDTO(
+                    msg.getId(),
+                    EstadoMensaje.LEIDO.name(),
+                    chatId
+            );
+
+            messagingTemplate.convertAndSendToUser(
+                    telefonoRemitente,
+                    "/queue/mensajes/cambio-estado",
+                    dtoMensaje
+            );
+        }
+
+        // --- AVISO PARA EL SIDEBAR ---
+        EstadoSidebarDTO dtoSidebar = new EstadoSidebarDTO(chatId, EstadoMensaje.LEIDO.name());
+
+        messagingTemplate.convertAndSendToUser(
+                telefonoRemitente,
+                "/queue/chat/actualizacion-estado",
+                dtoSidebar
+        );
+
+        return "Mensaje leido correctamente";
+    }
+
+    public ChatSidebarDTO mapearChatADTO(Chat chat, Long miId, Map<Long, String> mapaDeAlias) {
+        ChatSidebarDTO dto = new ChatSidebarDTO();
+        dto.setChatId(String.valueOf(chat.getId()));
+        dto.setUltimoMensaje(chat.getUltimoMensajeContenido());
+        dto.setUltimoMensajeSenderId(chat.getUltimoMensajeSenderId());
+        dto.setUltimoMensajeEstado(String.valueOf(chat.getUltimoMensajeEstado()));
+        // Agregá aquí la fecha si ya la tenés en la entidad
+        // dto.setUltimoMensajeFecha(chat.getUltimoMensajeFecha());
+
+        boolean esGrupo = (chat.getNombre() != null && !chat.getNombre().isEmpty())
+                || chat.getParticipantes().size() > 2;
+
+        if (esGrupo) {
+            dto.setTipo("group");
+            dto.setNombre(chat.getNombre());
+            dto.setAvatarUrl(chat.getAvatarUrl());
+        } else {
+            dto.setTipo("private");
+            Usuario otroUsuario = chat.getParticipantes().stream()
+                    .map(Participante::getUsuario)
+                    .filter(u -> !u.getId().equals(miId))
+                    .findFirst()
+                    .orElse(null);
+
+            if (otroUsuario != null) {
+                // Aplicar Alias o Nombre Real
+                String nombreAMostrar = mapaDeAlias.getOrDefault(otroUsuario.getId(), otroUsuario.getNombre());
+                dto.setNombre(nombreAMostrar);
+                dto.setAvatarUrl(otroUsuario.getAvatarUrl());
+                dto.setUsuarioId(String.valueOf(otroUsuario.getId()));
+                dto.setEstado(otroUsuario.getEstado());
+            }
+        }
+        return dto;
+    }
+
+    /*Helper para obtener los alias del usuario*/
+    public Map<Long, String> obtenerMapaDeAlias(Long miId) {
+        return repositorioContacto.findAllByTitularId(miId).stream()
+                .filter(c -> c.getAlias() != null && !c.getAlias().isEmpty())
+                .collect(Collectors.toMap(
+                        c -> c.getContactoUsuario().getId(),
+                        Contacto::getAlias,
+                        (existente, reemplazo) -> existente
+                ));
     }
 }

@@ -19,7 +19,7 @@ import java.util.Optional;
 
 @Service
 @Transactional
-public class ServicioLoginImpl {
+public class ServicioLoginImpl implements ServicioLogin {
 
     @Autowired
     private RepositorioLogin repositorioLogin;
@@ -30,7 +30,8 @@ public class ServicioLoginImpl {
     @Autowired
     private JwtUtil jwtUtil;
 
-    @Transactional // ¡Muy importante para que todo se guarde o nada se guarde!
+    @Transactional
+    @Override
     public Usuario registrar(NewUsuarioDTO dto) {
 
         // 1. Validaciones
@@ -59,6 +60,7 @@ public class ServicioLoginImpl {
       return  repositorioLogin.save(newUser);
     }
     
+    @Override
     public AuthResponse loginWsp(AuthRequest request) {
         Usuario user = repositorioLogin.findByTelefono(request.getTelefono())
                 .orElseThrow(() -> new TelefonoNoExistenteException("El telefono no existe"));
@@ -79,10 +81,12 @@ public class ServicioLoginImpl {
         return response;
     }
 
+    @Override
     public List<Usuario> obtenerTodos() {
         return repositorioLogin.findAll();
     }
 
+    @Override
     public void eliminar(Long id) {
         if (!repositorioLogin.existsById(id)) { // existsById es más rápido que findById
             throw new RecursoNoEncontradoException("No se encontró el usuario");
@@ -90,10 +94,12 @@ public class ServicioLoginImpl {
         repositorioLogin.deleteById(id);
     }
 
+    @Override
     public Optional<Usuario> findByTelefono(String telefono) {
         return repositorioLogin.findByTelefono(telefono);
     }
 
+    @Override
     public Optional<Usuario> findById(Long id) {
         return repositorioLogin.findById(id);
     }
