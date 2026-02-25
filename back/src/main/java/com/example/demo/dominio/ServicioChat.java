@@ -3,6 +3,7 @@ package com.example.demo.dominio;
 import com.example.demo.dto.*;
 import com.example.demo.entidades.*;
 import com.example.demo.excepciones.RecursoNoEncontradoException;
+import org.springframework.data.domain.Page;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -28,7 +29,7 @@ public interface ServicioChat {
         // Importante para asegurar la integridad
     List<Mensaje> marcarMensajesComoLeidos(Long chatId, Long lectorId);
 
-    List<MensajeDTO> getMensajesPorChat(Long miId, Long chatId) throws RecursoNoEncontradoException;
+    Page<MensajeDTO> getMensajesPorChat(Long miId, Long chatId, int page, int size) throws RecursoNoEncontradoException;
 
     Mensaje findMensajeById(Long id);
 

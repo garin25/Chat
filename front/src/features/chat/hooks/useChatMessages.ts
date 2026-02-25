@@ -1,18 +1,17 @@
-// hooks/useChatMessages.ts
 import { useState, useMemo, useEffect, useRef } from 'react';
-import { useChatHistory } from './useChatHistory';       // Tu query de mensajes
 import { useSocketEvents } from './useSocketEvents';     // Tu lógica de sockets
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSidebarContacts } from './useSidebarContact';
 import { ChatService } from '../services/chat.service';
+import { inyectarMensajeEnCache } from './utils';
 
 export const useChatMessages = (
-    clientRef: any, 
-    isConnected: boolean, 
+    clientRef: any,
+    isConnected: boolean,
     user: any
 ) => {
     const queryClient = useQueryClient();
-    
+
     // Asegurar que user.id siempre existe
     if (!user?.id) {
         throw new Error("Usuario no autenticado correctamente");
@@ -22,68 +21,22 @@ export const useChatMessages = (
     // Solo guardamos lo que es "interacción del usuario", no los datos.
     const [idChatSeleccionado, setIdChatSeleccionado] = useState<number | null>(null);
     const [mensajeIdParaEnfocar, setMensajeIdParaEnfocar] = useState<number | null>(null);
-    
+
     // Ref para trackear si ya marcamos como leído este chat
     const chatMarcadoComoLeidoRef = useRef<Set<number>>(new Set());
 
-    // --- 2. DATOS (React Query) ---
-    
-    // A. Contactos (Sidebar)
-    const { 
-        data: listaDeContactos = [], // Valor por defecto [] si es undefined
-        refetch: recargarContactos 
-    } = useSidebarContacts();
 
-    // B. Mensajes (Chat Central) -> Depende del ID seleccionado
-    const { 
-        data: historialDeMensajes= [] 
-    } = useChatHistory(idChatSeleccionado);
+    // A. Contactos (Sidebar)
+    const {
+        data: listaDeContactos = [], // Valor por defecto [] si es undefined
+        refetch: recargarContactos
+    } = useSidebarContacts();
 
 
     // --- 3. SOCKETS (Lógica en tiempo real) ---
     // Le pasamos el ID seleccionado para que sepa si marcar como leído automáticamente
-    useSocketEvents(clientRef, idChatSeleccionado, user,isConnected);
+    useSocketEvents(clientRef, idChatSeleccionado, user, isConnected);
 
-    // --- 3.5. EFECTO: Marcar como LEIDO al abrir chat ---
-    useEffect(() => {
-        // Solo si el chat está seleccionado y hay mensajes cargados
-        if (!idChatSeleccionado || !historialDeMensajes || historialDeMensajes.length === 0) {
-            return;
-        }
-
-        // Si ya marcamos este chat como leído, no hacerlo de nuevo
-        if (chatMarcadoComoLeidoRef.current.has(idChatSeleccionado)) {
-            return;
-        }
-
-        // Normalizar IDs
-        const userIdNormalizado = Number(user?.id) || 0;
-
-        // Verificar si hay mensajes no leídos del OTRO usuario
-        const tieneNoLeidos = historialDeMensajes.some(m => 
-            m.estado !== 'LEIDO' && 
-            Number(m.sender?.id) !== userIdNormalizado
-        );
-
-        // Solo si hay mensajes sin leer del otro, marcar como leído
-        if (tieneNoLeidos) {
-            queryClient.setQueryData(['chat', Number(idChatSeleccionado), 'messages'], (old: any[] = []) => 
-                old.map(m => {
-                    // Solo marcar como LEIDO los mensajes del OTRO usuario que no son míos
-                    if (m.estado !== 'LEIDO' && Number(m.sender?.id) !== userIdNormalizado) {
-                        return { ...m, estado: 'LEIDO' };
-                    }
-                    return m;
-                })
-            );
-
-            // Notificar al servidor que los mensajes fueron leídos
-            ChatService.marcarComoLeidos(idChatSeleccionado);
-        }
-
-        // Marcar este chat como ya procesado
-        chatMarcadoComoLeidoRef.current.add(idChatSeleccionado);
-    }, [idChatSeleccionado, historialDeMensajes, queryClient, user?.id]);
 
     // Limpiar ref cuando cambios de chat
     useEffect(() => {
@@ -108,7 +61,7 @@ export const useChatMessages = (
         if (mensajeId) setMensajeIdParaEnfocar(mensajeId);
 
         // Optimistic Update: Marcar como leído en el Sidebar
-        queryClient.setQueryData(['chats', 'sidebar'], (old: any[] = []) => 
+        queryClient.setQueryData(['chats', 'sidebar'], (old: any[] = []) =>
             old.map(c => c.chat_id === chatId ? { ...c, cantidadNoLeidos: 0, ultimo_mensaje_estado: 'LEIDO' } : c)
         );
     };
@@ -121,12 +74,18 @@ export const useChatMessages = (
         },
 
         onMutate: async (textoNuevo: string) => {
-            const previousMessages = queryClient.getQueryData(['chat', idChatSeleccionado, 'messages']) || [];
+            // 1. ARREGLO DE LLAVE (Y OJO: ahora esto devuelve un objeto InfiniteData, no un array [])
+            const queryKeyMensajes = ['mensajes', idChatSeleccionado];
+
+            // Cancelamos peticiones en vuelo para que no pisen nuestro update optimista
+            await queryClient.cancelQueries({ queryKey: queryKeyMensajes });
+
+            const previousMessages = queryClient.getQueryData(queryKeyMensajes);
 
             const tempId = -(Date.now());
             const usuarioIdNormalizado = Number(user?.id) || 0;
             const ahora = new Date().toISOString();
-            
+
             const mensajeOptimista = {
                 id: tempId,
                 contenido: textoNuevo,
@@ -136,51 +95,80 @@ export const useChatMessages = (
                 sender: { id: usuarioIdNormalizado, nombre: user?.nombre || "Yo" }
             };
 
-            queryClient.setQueryData(['chat', idChatSeleccionado, 'messages'], (old: any[] = []) => 
-                [...old, mensajeOptimista]
-            );
+            // 2. Usamos tu nueva función mágica (esto está perfecto)
+            inyectarMensajeEnCache(queryClient, idChatSeleccionado, mensajeOptimista);
 
-            // Actualizar sidebar con el nuevo mensaje
-            queryClient.setQueryData(['chats', 'sidebar'], (old: any[] = []) => 
-                old.map(c => 
-                    c.chat_id === idChatSeleccionado 
+            // 3. OJO CON LA LLAVE DEL SIDEBAR: 
+            // Asegurate de que ['chats', 'sidebar'] sea EXACTAMENTE la misma llave que usás adentro de tu hook useSidebarContacts
+            queryClient.setQueryData(['chats', 'sidebar'], (old: any[] = []) =>
+                old.map(c =>
+                    c.chat_id === idChatSeleccionado
                         ? { ...c, ultimo_mensaje: textoNuevo, ultimo_mensaje_fecha: ahora, ultimo_mensaje_estado: 'ENVIANDO' }
                         : c
                 )
             );
 
-            return { previousMessages, tempId, usuarioIdNormalizado };
+            return { previousMessages, tempId, usuarioIdNormalizado, queryKeyMensajes };
         },
 
         onError: (_, __, context) => {
-            if (context?.previousMessages !== undefined) {
+            // 4. ARREGLO DE LLAVE AL RESTAURAR
+            if (context?.previousMessages !== undefined && context?.queryKeyMensajes) {
                 queryClient.setQueryData(
-                    ['chat', idChatSeleccionado, 'messages'], 
-                    context.previousMessages
+                    context.queryKeyMensajes,
+                    context.previousMessages // Restauramos el InfiniteData completo
                 );
             }
         },
-        
-        onSuccess: () => {
-            const chatIdNumerizado = Number(idChatSeleccionado);
-            
-            // Invalidar query para que refetch y obtenga datos reales
-            queryClient.invalidateQueries({ 
-                queryKey: ['chat', chatIdNumerizado, 'messages'],
-                refetchType: 'all'
+
+        onSuccess: (mensajeRealGuardado, variables, context) => {
+
+            // 1. Usamos EXACTAMENTE la misma llave que usó el onMutate
+            const queryKey = context?.queryKeyMensajes || ['mensajes', Number(idChatSeleccionado)];
+
+            queryClient.setQueryData(queryKey, (oldData: any) => {
+                if (!oldData || !oldData.pages) return oldData;
+
+                let loEncontre = false;
+
+                // 2. Mapeamos TODAS las páginas, no solo la 0
+                const nuevasPaginas = oldData.pages.map((page: any) => {
+                    return {
+                        ...page,
+                        content: page.content.map((m: any) => {
+                            // 3. Comparamos forzando a String para evitar que 15 sea distinto de "15"
+                            if (String(m.id) === String(context?.tempId)) {
+                                loEncontre = true;
+
+                                // Combinamos el mensaje optimista (que tiene la estructura de UI correcta)
+                                // con los datos reales que nos confirmó la base de datos
+                                return {
+                                    ...m,
+                                    id: mensajeRealGuardado?.id || m.id,
+                                    estado: m.estado === "LEIDO" ? "LEIDO" : "ENTREGADO",
+                                    sentAt: mensajeRealGuardado?.sentAt || m.sentAt
+                                };
+                            }
+                            return m;
+                        })
+                    };
+                });
+
+                return { ...oldData, pages: nuevasPaginas };
             });
 
-            // Reordenar sidebar: mover el chat actual al principio
-            queryClient.setQueryData(['chats', 'sidebar'], (old: any[] = []) => {
-                const index = old.findIndex(c => c.chat_id === idChatSeleccionado);
-                if (index === -1) return old;
+            queryClient.invalidateQueries({
+                queryKey: ['mensajes', Number(idChatSeleccionado)],
+                refetchType: 'all' // Fuerza a buscar los datos frescos en el background
+            });
 
-                // Sacar de la posición actual
+            // Sidebar update
+            queryClient.setQueryData(['chats', 'sidebar'], (old: any[] = []) => {
+                const index = old.findIndex(c => String(c.chat_id || c.chatId) === String(idChatSeleccionado));
+                if (index === -1) return old;
                 const contacto = { ...old[index] };
                 const nuevaLista = [...old];
                 nuevaLista.splice(index, 1);
-
-                // Poner al principio
                 nuevaLista.unshift(contacto);
                 return nuevaLista;
             });
@@ -212,7 +200,6 @@ export const useChatMessages = (
     // --- 6. RETORNO (La misma firma que antes) ---
     return {
         listaDeContactos,       // Viene de React Query
-        historialDeMensajes,    // Viene de React Query
         idChatSeleccionado,     // Estado Local
         headerContactSelected,  // Calculado (Memo)
         seleccionarChat,        // Función Wrapper

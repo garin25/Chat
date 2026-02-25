@@ -3,9 +3,12 @@ package com.example.demo.dto; // <--- OJO: El paquete debe coincidir con el del 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.io.Serializable;
+
 @Data
 @NoArgsConstructor
-public class ChatSidebarDTO {
+public class ChatSidebarDTO implements Serializable {
 
     @JsonProperty("usuario_id") // <--- Esto hace que en el JSON salga "usuario_id"
     private String usuarioId;

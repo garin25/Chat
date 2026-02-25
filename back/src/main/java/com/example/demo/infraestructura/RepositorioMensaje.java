@@ -3,6 +3,8 @@ package com.example.demo.infraestructura;
 import com.example.demo.entidades.Mensaje;
 import com.example.demo.entidades.enums.EstadoMensaje;
 import jakarta.validation.constraints.NotEmpty;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -36,4 +38,7 @@ public interface RepositorioMensaje  extends JpaRepository<Mensaje,Long> {
             "WHERE c.id IN (SELECT p.chat.id FROM Participante p WHERE p.usuario.id = :miId)" +
             "AND m.contenido  LIKE :busqueda ")
     List<Mensaje> buscarCoincidencias(@Param("miId") Long miId, @Param("busqueda")String data);
+
+    @Query("SELECT m FROM Mensaje m WHERE m.chat.id = :chatId ORDER BY m.sentAt DESC")
+    Page<Mensaje> findMensajesPorChatPaginados(@Param("chatId") Long chatId, Pageable pageable);
 }

@@ -28,7 +28,6 @@ export const Wsp = () => {
 
   const {
     listaDeContactos,
-    historialDeMensajes,
     idChatSeleccionado,
     headerContactSelected,
     seleccionarChat,
@@ -125,7 +124,7 @@ export const Wsp = () => {
           <ChatActivo
             enviarMensaje={enviarMensaje}
             idChatSeleccionado={idChatSeleccionado}
-            mensajesDelChat={historialDeMensajes}
+            //mensajesDelChat={historialDeMensajes}
             headerContactSelected={headerContactSelected}
             onBack={handleVolver}
             clientRef={clientRef}

@@ -12,8 +12,6 @@ function Navbar() {
   const isLogueado = token ? true : false;
   const handleLogout = () => {
     logout();
-    navigate('/wsp/login'); // Redirigimos
-    // Opcional: window.location.reload() para limpiar estados de memoria
   };
 
 

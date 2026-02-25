@@ -1,6 +1,10 @@
 import type { NewContactFormValues } from "@/features/groups/components/ModalNewContact";
 import type { NuevoGrupo } from "@/interfaces/nuevoGrupo.interface";
 import { apiInstance } from "@/services/api";
+import type { QueryFunctionContext } from "@tanstack/react-query";
+// 1. Definimos una tupla (un array estricto) para tu queryKey.
+// Sabe que la posición 0 siempre es el string 'mensajes' y la 1 es el ID.
+type MensajesQueryKey = ['mensajes', number]; // Cambiá number por string si tu chatId es texto
 
 export const ChatService = {
 
@@ -15,7 +19,7 @@ export const ChatService = {
         return response.data;
     },
 
-    marcarComoLeidos: async (chatId: number) => {
+    marcarComoLeidos: async (chatId: number| null) => {
         const response = await apiInstance.post(`/api/chats/${chatId}/leido`);
         return response.data;
     },
@@ -26,15 +30,25 @@ export const ChatService = {
         return response.data;
     },
 
+
     obtenerInfoChat: async (chatId: number) => {
         const response = await apiInstance.get(`/api/chats/${chatId}`);
         return response.data;
     },
-    
+
     enviarMensaje: async (chatId: number, contenido: string) => {
         const response = await apiInstance.post(`/api/chats/${chatId}/messages`, {
             contenido
         });
         return response.data;
+    },
+
+    fetchMensajesPaginados: async ({
+        pageParam = 0,
+        queryKey
+    }: QueryFunctionContext<MensajesQueryKey, number>) => {
+        const chatId = queryKey[1]; // Sacamos el ID de la key de TanStack
+        const res = await apiInstance.get(`/api/chats/${chatId}/messages?page=${pageParam}&size=50`);
+        return res.data;
     }
 };

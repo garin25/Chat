@@ -4,6 +4,7 @@ import com.example.demo.entidades.enums.EstadoMensaje;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.validation.constraints.NotBlank;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import java.time.LocalDateTime;
 
@@ -21,6 +22,7 @@ public class MensajeDTO {
     private SenderDTO sender; // Clase interna pequeña
 
     @Data
+    @AllArgsConstructor
     public static class SenderDTO {
         private Long id;
         private String nombre;

@@ -6,11 +6,13 @@ import { Mensaje } from "./Mensaje"
 import { useEffect, useRef } from "react";
 import { useEscribiendo, usePresencia } from "../hooks";
 import { StatusEnLinea } from "./StatusEnLinea";
+import { useInfiniteQuery, useQueryClient, type InfiniteData } from "@tanstack/react-query";
+import { ChatService } from "../services/chat.service";
+import type { TypeContacto } from "../interfaces/contacto.interface";
 
 interface ChatProps {
     idChatSeleccionado: number | null,
     enviarMensaje: (nuevoTexto: string) => void,
-    mensajesDelChat: Message[] | null,
     headerContactSelected: HeaderContactSelected | null,
     onBack: () => void,
     clientRef: React.MutableRefObject<any>,
@@ -18,10 +20,70 @@ interface ChatProps {
     mensajeIdParaEnfocar: number | null,
     setMensajeIdParaEnfocar: (id: number | null) => void;
 }
-export const ChatActivo = ({ idChatSeleccionado, enviarMensaje, mensajesDelChat, headerContactSelected, onBack, clientRef, isConnected, mensajeIdParaEnfocar, setMensajeIdParaEnfocar }: ChatProps) => {
+interface SpringPage<T> {
+    content: T[];
+    last: boolean;
+    number: number;
+}
+export const ChatActivo = ({ idChatSeleccionado, enviarMensaje, headerContactSelected, onBack, clientRef, isConnected, mensajeIdParaEnfocar, setMensajeIdParaEnfocar }: ChatProps) => {
+    const queryClient = useQueryClient();
     const { user } = useAuth();
-
+    const topObserverRef = useRef(null);
+    const cantidadAnteriorMensajes = useRef(0);
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    const scrollContainerRef = useRef<HTMLDivElement>(null); // Para medir la caja
+    const scrollHeightPrevio = useRef<number>(0); // Para recordar cuánto medía
+    // Para saber si el usuario acaba de hacer clic en otro contacto
+    const chatIdAnterior = useRef(idChatSeleccionado);
+
+    const chatIdNumerico = Number(idChatSeleccionado);
+    const {
+        data,
+        fetchNextPage,
+        hasNextPage,
+        isFetchingNextPage,
+    } = useInfiniteQuery({
+        // 👇 Le decimos a TS: "Confiá en mí, esto es exactamente un string y un número"
+        queryKey: ['mensajes', chatIdNumerico] as ['mensajes', number],
+
+        queryFn: ChatService.fetchMensajesPaginados,
+        initialPageParam: 0,
+        getNextPageParam: (lastPage: any) => {
+            // Nuevo formato de Spring Data VIA_DTO
+            if (lastPage.page.number >= lastPage.page.totalPages - 1) return undefined;
+            return lastPage.page.number + 1;
+        },
+    });
+
+    // 2. EL USEEFFECT PARA EL SCROLL INFINITO
+    useEffect(() => {
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
+                    // 👇 MAGIA: Guardamos la altura de la caja antes de pedir la data
+                    if (scrollContainerRef.current) {
+                        scrollHeightPrevio.current = scrollContainerRef.current.scrollHeight;
+                    }
+                    fetchNextPage();
+                }
+            },
+            { threshold: 0.1 } // Bajale el threshold a 0.1 para que dispare más fácil
+        );
+
+        if (topObserverRef.current) {
+            observer.observe(topObserverRef.current);
+        }
+        return () => observer.disconnect();
+    }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+
+    // 3. PROCESAR LOS MENSAJES PARA LA VISTA
+    // TanStack devuelve un array de "páginas", tenemos que aplanarlo en un solo array
+    const mensajesAplanados = data?.pages.flatMap(page => page.content) || [];
+
+    // Como Spring los manda DESC (el más nuevo en la página 0), 
+    // en la vista de chat queremos el más nuevo ABAJO de todo. Así que los damos vuelta:
+    const mensajesOrdenados = [...mensajesAplanados].reverse();
+
     const { usuarioEscribiendo } = useEscribiendo(idChatSeleccionado, clientRef, user);
 
     // 1. Extraemos el ID solo si es chat privado
@@ -40,14 +102,45 @@ export const ChatActivo = ({ idChatSeleccionado, enviarMensaje, mensajesDelChat,
         messagesEndRef.current?.scrollIntoView({ behavior: behavior });
     };
 
-    // 3. EFECTO: Se ejecuta cuando cambia el chat o llegan mensajes
     useEffect(() => {
-        // Ejecutamos el scroll
-        scrollToBottom();
-    }, [mensajesDelChat, idChatSeleccionado]); // <--- IMPORTANTE: Dependencias
+    const cantidadActual = mensajesOrdenados?.length || 0;
+
+    // REGLA 1: ¿Cambiamos de chat?
+    if (chatIdAnterior.current !== idChatSeleccionado) {
+        chatIdAnterior.current = idChatSeleccionado;
+        cantidadAnteriorMensajes.current = cantidadActual;
+        
+        // Esperamos 50ms para que React termine de dibujar las burbujas en el HTML
+        setTimeout(() => scrollToBottom(true), 50);
+        return;
+    }
+
+    const diferencia = cantidadActual - cantidadAnteriorMensajes.current;
+    cantidadAnteriorMensajes.current = cantidadActual;
+
+    // REGLA 2: Carga inicial de un chat (ej: F5 o cuando React Query trae los datos)
+    if (cantidadActual > 0 && diferencia === cantidadActual) {
+        setTimeout(() => scrollToBottom(true), 50);
+        return;
+    }
+
+    // REGLA 3: Mantener la posición al cargar mensajes viejos (Scroll hacia arriba)
+    if (diferencia > 10 && scrollContainerRef.current) {
+        const alturaNueva = scrollContainerRef.current.scrollHeight;
+        const pixelesAgregados = alturaNueva - scrollHeightPrevio.current;
+        scrollContainerRef.current.scrollTop = pixelesAgregados;
+        return;
+    }
+
+    // REGLA 4: Mensaje nuevo en vivo (Bajamos suavemente)
+    if (diferencia > 0 && diferencia <= 10) {
+        setTimeout(() => scrollToBottom(false), 50);
+    }
+
+}, [mensajesOrdenados, idChatSeleccionado]);
 
     useEffect(() => {
-        if (mensajeIdParaEnfocar && mensajesDelChat != null) {
+        if (mensajeIdParaEnfocar && mensajesOrdenados != null) {
             // Buscamos el div del mensaje por su ID
             const elemento = document.getElementById(`msg-${mensajeIdParaEnfocar}`);
 
@@ -64,8 +157,62 @@ export const ChatActivo = ({ idChatSeleccionado, enviarMensaje, mensajesDelChat,
                 }, 2000);
             }
         }
-    }, [mensajeIdParaEnfocar, mensajesDelChat]);
+    }, [mensajeIdParaEnfocar, mensajesOrdenados]);
 
+
+    //Marcar como LEIDO al abrir chat 
+    useEffect(() => {
+        // Si todavía no hay datos de React Query, no hacemos nada
+        if (!data || !data.pages) return;
+
+        const userIdNormalizado = Number(user?.id) || 0;
+
+        // Aplanamos usando el tipo MensajeDTO explícitamente
+        const todosLosMensajes: Message[] = data.pages.flatMap((page) => page.content);
+
+        // Verificamos si hay alguno sin leer del otro usuario
+        const tieneNoLeidos = todosLosMensajes.some(
+            (m) => m.estado !== 'LEIDO' && Number(m.sender?.id) !== userIdNormalizado
+        );
+
+        if (tieneNoLeidos) {
+            // 👇 LA MAGIA DE TYPESCRIPT ACÁ: Le decimos la forma exacta de la caché
+            queryClient.setQueryData<InfiniteData<SpringPage<Message>>>(
+                ['mensajes', chatIdNumerico],
+                (oldData) => {
+                    if (!oldData) return oldData;
+
+                    return {
+                        ...oldData,
+                        pages: oldData.pages.map((page) => ({
+                            ...page,
+                            // Mapeamos el contenido tipado
+                            content: page.content.map((m) => {
+                                if (m.estado !== 'LEIDO' && Number(m.sender?.id) !== userIdNormalizado) {
+                                    return { ...m, estado: 'LEIDO' };
+                                }
+                                return m;
+                            }),
+                        })),
+                    };
+                }
+            );
+
+            // Le avisamos a Spring Boot en segundo plano
+            ChatService.marcarComoLeidos(idChatSeleccionado);
+
+            // Tipamos también la actualización del Sidebar
+            queryClient.setQueryData<TypeContacto[]>(
+                ['chats', 'sidebar'],
+                (oldSidebar = []) =>
+                    oldSidebar.map((c) =>
+                        c.chat_id === idChatSeleccionado
+                            ? { ...c, cantidadNoLeidos: 0, ultimo_mensaje_estado: 'LEIDO' }
+                            : c
+                    )
+            );
+        }
+    }, [data, idChatSeleccionado, chatIdNumerico, queryClient, user?.id]);
     return (
 
         <div className="chat-window">
@@ -108,20 +255,25 @@ export const ChatActivo = ({ idChatSeleccionado, enviarMensaje, mensajesDelChat,
                 </div>
             </div>)}
 
-            <div className="message-list">
-                {mensajesDelChat?.map(mensaje => {
-                    // ¿El ID del emisor es igual a MI id (user.id)?
-                    // Usamos Number() por seguridad (a veces vienen como strings "1" vs 1)
-                    // IMPORTANTE: Ignorar mensajes con ID temporal (negativo, optimistas)
-                    const esOptimista = typeof mensaje.id === 'number' && mensaje.id < 0;
-                    
-                    // Normalizar IDs a números para comparación segura
+
+
+            {/* Opcional pero recomendado: Un indicador visual */}
+            {isFetchingNextPage && (
+                <div style={{ textAlign: 'center', color: '#888', padding: '10px 0' }}>
+                    Cargando mensajes anteriores...
+                </div>
+            )}
+
+            <div className="message-list" ref={scrollContainerRef}>
+                <div ref={topObserverRef} style={{ height: '10px', width: '100%' }} />
+
+                {mensajesOrdenados?.map(mensaje => {
+
                     const miIdNormalizado = Number(user?.id) || 0;
                     const senderIdNormalizado = Number(mensaje.sender?.id) || 0;
-                    
-                    // Lógica final: si es optimista, aún no sabemos si es nuestro (false)
-                    // Si es real, comparamos IDs normalizados
-                    const soyYo = !esOptimista && senderIdNormalizado === miIdNormalizado;
+
+                    // 2. Quitamos el "!esOptimista". Si los IDs coinciden, SOY YO.
+                    const soyYo = senderIdNormalizado === miIdNormalizado;
 
                     return (
                         <Mensaje

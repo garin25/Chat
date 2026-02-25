@@ -7,6 +7,7 @@ import com.example.demo.dto.*;
 import com.example.demo.entidades.*;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
@@ -32,18 +33,20 @@ public class ControladorChat {
         return ResponseEntity.ok(servicioChat.getSidebarChats(miId));
     }
 
-    @GetMapping("/all")
+    /*@GetMapping("/all")
     public ResponseEntity<List<MensajeDTO>> getMensajesParaElNum(@UsuarioAutenticado Usuario yo) {
         Long miId = yo.getId();
         return ResponseEntity.ok(servicioChat.getMensajesParaElNum(miId));
-    }
+    }*/
 
     @GetMapping("/{chatId}/messages")
-    public ResponseEntity<List<MensajeDTO>> getMensajesPorChat(@UsuarioAutenticado Usuario yo,
-                                                               @PathVariable("chatId") Long chatId) {
+    public ResponseEntity<Page<MensajeDTO>> getMensajesPorChat(@UsuarioAutenticado Usuario yo,
+                                                               @PathVariable("chatId") Long chatId,
+                                                               @RequestParam(defaultValue = "0") int page,
+                                                               @RequestParam(defaultValue = "50") int size) {
         Long miId = yo.getId();
 
-        return ResponseEntity.ok(servicioChat.getMensajesPorChat(miId, chatId));
+        return ResponseEntity.ok(servicioChat.getMensajesPorChat(miId, chatId,page,size));
     }
 
 

@@ -1,6 +1,7 @@
 version: '3.8'
+
 services:
-  # Solo la base de datos
+  # 1. Base de datos principal (PostgreSQL)
   db:
     image: postgres:15
     container_name: postgres-dev
@@ -9,9 +10,21 @@ services:
       POSTGRES_PASSWORD: root
       POSTGRES_DB: wsp
     ports:
-      - "5432:5432" # Expuesto para que tu Java local pueda entrar
+      - "5432:5432"
     volumes:
       - postgres_data_dev:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d wsp"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # 2. Base de datos en memoria (Redis)
+  cache:
+    image: redis:7-alpine
+    container_name: redis-dev
+    ports:
+      - "6379:6379"
 
 volumes:
   postgres_data_dev:

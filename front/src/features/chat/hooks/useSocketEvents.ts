@@ -1,126 +1,125 @@
 import { useEffect, useRef } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQueryClient, type InfiniteData } from '@tanstack/react-query';
+import type { SpringPage } from '../interfaces/page.interface';
+import type { Message } from '../interfaces/message.interface';
+import type { TypeContacto } from '../interfaces/contacto.interface';
 
-// Instancia de audio (fuera del componente para no recrearla)
+
+// Instancia de audio
 const audioNotificacion = new Audio('/sounds/new-notification-3-398649.mp3');
 
 export const useSocketEvents = (
     clientRef: React.MutableRefObject<any>,
     activeChatId: number | null,
     user: any,
-    isConnected: boolean // Importante: Bandera para saber si ya conectó
+    isConnected: boolean
 ) => {
     const queryClient = useQueryClient();
-    // Set para evitar procesar el mismo mensaje dos veces (duplicados del socket)
     const mensajesProcesados = useRef(new Set<number>());
 
     useEffect(() => {
-        // 1. Si no hay cliente o no está conectado, no hacemos nada
         if (!clientRef.current || !clientRef.current.connected) return;
 
         console.log("🔌 Iniciando suscripciones de Socket...");
 
+        // =================================================================
+        // A. MENSAJES NUEVOS (/user/queue/notificaciones)
+        // =================================================================
         const subNuevos = clientRef.current.subscribe('/user/queue/notificaciones', (msg: any) => {
             const payload = JSON.parse(msg.body);
-            // 1. Detectar ID del sender sin importar si viene como senderId o sender_id
+
+            // 🛡️ ESCUDO: Si no es un mensaje real, ignorar
+            if (!payload.id || !payload.contenido) return;
+
             const senderIdReal = payload.senderId || payload.sender_id || payload.sender?.id;
-
-            // 2. Detectar Nombre
-            const senderNombreReal = payload.senderNombre || payload.sender_nombre || "Usuario";
-
-            // 3. Detectar Chat ID
             const chatIdReal = Number(payload.chatId || payload.chat_id);
+            const esChatAbierto = String(activeChatId) === String(chatIdReal);
+            const soyElSender = String(senderIdReal) === String(user?.id);
 
-            // Evitar duplicados
             if (mensajesProcesados.current.has(payload.id)) return;
             mensajesProcesados.current.add(payload.id);
 
-            const esChatAbierto = String(activeChatId) === String(chatIdReal);
-
-            // Sonido (Si no soy yo)
-            if (String(senderIdReal) !== String(user?.id)) {
+            if (!soyElSender) {
                 audioNotificacion.currentTime = 0;
                 audioNotificacion.play().catch(e => console.warn(e));
             }
 
-            // Confirmación automática de lectura (Si tengo el chat abierto)
-            if (esChatAbierto) {
+            if (esChatAbierto && !soyElSender) {
                 clientRef.current.send("/app/chat/mark-as-read", {}, JSON.stringify({ chatId: payload.chatId }));
-            } else {
+            } else if (!esChatAbierto && !soyElSender){
                 clientRef.current.send("/app/chat/message-delivered", {}, JSON.stringify({ messageId: payload.id }));
             }
 
-            // 1. ACTUALIZAR HISTORIAL (Chat Central)
-            // Solo si el usuario alguna vez cargó ese chat (existe en caché)
-            queryClient.setQueryData(['chat', Number(payload.chatId), 'messages'], (oldData: any[] | undefined) => {
-                if (!oldData) return undefined;
-                
-                // Verificar si ya existe este mensaje (por ID real)
-                const yaProcesado = oldData.some(m => m.id === payload.id);
-                if (yaProcesado) return oldData;
+            const senderIdNormalizado = Number(senderIdReal) || 0;
+            const nuevoMensaje = {
+                id: payload.id,
+                contenido: payload.contenido,
+                sentAt: payload.sentAt,
+                chatId: payload.chatId,
+                estado: esChatAbierto ? 'LEIDO' : 'ENTREGADO',
+                sender: { id: senderIdNormalizado, nombre: payload.senderNombre || payload.sender?.nombre || "Usuario" }
+            };
 
-                // Adaptador: Socket plano -> Objeto UI
-                // IMPORTANTE: Normalizar sender.id SIEMPRE a número
-                const senderIdNormalizado = Number(senderIdReal) || 0;
-                const nuevoMensaje = {
-                    id: payload.id,
-                    contenido: payload.contenido,
-                    sentAt: payload.sentAt,
-                    chatId: payload.chatId,
-                    estado: esChatAbierto ? 'LEIDO' : 'ENTREGADO',
-                    sender: { id: senderIdNormalizado, nombre: senderNombreReal || "Usuario" }
-                };
-                
-                // MODO 1: Buscar optimista para REEMPLAZAR (cuando YO envío un mensaje)
-                let huboReemplazo = false;
-                const mensajesActualizados = oldData.map(m => {
-                    // Si es un optimista temporal (ID negativo) y es del mismo usuario
-                    if (m.id < 0 && Number(m.sender?.id) === senderIdNormalizado) {
-                        huboReemplazo = true;
-                        return nuevoMensaje;
-                    }
-                    return m;
+            // 👇 LA PRUEBA DE FUEGO PARA EL DIBUJADO EN TIEMPO REAL 👇
+            const queryKeyMensajes = ['mensajes', chatIdReal] as ['mensajes', number];
+           
+            // Actualizamos el historial
+            queryClient.setQueryData<InfiniteData<SpringPage<Message>>>(queryKeyMensajes, (oldData) => {
+                if (!oldData || !oldData.pages || oldData.pages.length === 0) return oldData;
+
+                let huboReemplazoOptimista = false;
+                const nuevasPaginas = oldData.pages.map((page, index) => {
+                    if (index !== 0) return page; // Solo página 0
+
+                    const nuevoContent = page.content.map(m => {
+                        // Reemplazo optimista
+                        if (m.id < 0 && Number(m.sender?.id) === senderIdNormalizado) {
+                            huboReemplazoOptimista = true;
+                            return nuevoMensaje;
+                        }
+                        return m;
+                    });
+
+                    return { ...page, content: nuevoContent };
                 });
-                
-                if (!huboReemplazo) {
-                    return [...oldData, nuevoMensaje];
-                }
-                
-                return mensajesActualizados;
+
+                // Verificamos si ya existe para no duplicar
+                const yaExiste = oldData.pages[0].content.some(m => m.id === payload.id);
+                if (yaExiste) return oldData;
+
+                if (huboReemplazoOptimista) return { ...oldData, pages: nuevasPaginas };
+
+                // 🟢 INYECCIÓN REAL DEL MENSAJE DEL OTRO USUARIO
+                nuevasPaginas[0] = {
+                    ...nuevasPaginas[0],
+                    content: [nuevoMensaje, ...nuevasPaginas[0].content]
+                };
+                return { ...oldData, pages: nuevasPaginas };
             });
 
-            // 2. ACTUALIZAR SIDEBAR (Reordenar y contar)
-            queryClient.setQueryData(['chats', 'sidebar'], (oldSidebar: any[] | undefined) => {
-                if (!oldSidebar) return [];
+            // 2. ACTUALIZAR SIDEBAR (Igual, chequeando la queryKey)
+            queryClient.setQueryData<TypeContacto[]>(['chats', 'sidebar'], (oldSidebar = []) => {
+                const index = oldSidebar.findIndex(c => String(c.chat_id || c.chat_id) === String(chatIdReal));
 
-                const index = oldSidebar.findIndex(c => String(c.chat_id || c.chatId) === String(payload.chatId));
-
-                // Si es chat nuevo, invalidar para recargar todo es más seguro
                 if (index === -1) {
                     queryClient.invalidateQueries({ queryKey: ['chats', 'sidebar'] });
                     return oldSidebar;
                 }
 
-                // Copia profunda para modificar
                 const contacto = { ...oldSidebar[index] };
                 const nuevaLista = [...oldSidebar];
-
-                // Sacar de la posición actual
                 nuevaLista.splice(index, 1);
 
-                // Actualizar datos
                 contacto.ultimo_mensaje = payload.contenido;
                 contacto.ultimo_mensaje_fecha = payload.sentAt;
                 contacto.ultimo_mensaje_estado = esChatAbierto ? 'LEIDO' : 'ENTREGADO';
 
-                // Lógica de contador
                 if (!esChatAbierto) {
                     contacto.cantidadNoLeidos = (contacto.cantidadNoLeidos || 0) + 1;
                 } else {
                     contacto.cantidadNoLeidos = 0;
                 }
 
-                // Poner al principio
                 nuevaLista.unshift(contacto);
                 return nuevaLista;
             });
@@ -131,36 +130,44 @@ export const useSocketEvents = (
         // =================================================================
         const subEstado = clientRef.current.subscribe('/user/queue/mensajes/cambio-estado', (msg: any) => {
             const update = JSON.parse(msg.body);
+            const chatIdUpdate = Number(update.chatId || update.chat_id);
+            const mensajeIdUpdate = Number(update.id || update.mensajeId);
 
-            // Actualizar cache inmediatamente
-            queryClient.setQueryData(['chat', Number(update.chatId), 'messages'], (oldData: any[] | undefined) => {
-                if (!oldData) return oldData;
 
-                return oldData.map(m => {
-                    if (String(m.id) === String(update.id)) {
-                        return { ...m, estado: update.estado };
-                    }
-                    // Marcar anteriores como leídos si es LEIDO (lógica WhatsApp)
-                    const userIdNormalizado = Number(user?.id) || 0;
-                    const senderIdNormalizado = Number(m.sender?.id) || 0;
-                    if (update.estado === 'LEIDO' && m.estado !== 'LEIDO' && senderIdNormalizado === userIdNormalizado && m.id < update.id) {
-                        return { ...m, estado: 'LEIDO' };
-                    }
-                    return m;
-                });
+            const queryKeyMensajes = ['mensajes', chatIdUpdate] as ['mensajes', number];
+           
+
+            queryClient.setQueryData<InfiniteData<SpringPage<Message>>>(queryKeyMensajes, (oldData) => {
+                if (!oldData || !oldData.pages) return oldData;
+
+                let encontroElMensaje = false;
+
+                const nuevasPaginas = oldData.pages.map(page => ({
+                    ...page,
+                    content: page.content.map(m => {
+                        // 1. Cambiamos el estado del mensaje específico
+                        if (Number(m.id) === mensajeIdUpdate) {
+                            encontroElMensaje = true;
+                            return { ...m, estado: update.estado };
+                        }
+
+                        // 2. Lógica WhatsApp (marcar los viejos como leídos también)
+                        const userIdNormalizado = Number(user?.id) || 0;
+                        const senderIdNormalizado = Number(m.sender?.id) || 0;
+                        if (update.estado === 'LEIDO' && m.estado !== 'LEIDO' && senderIdNormalizado === userIdNormalizado && Number(m.id) < mensajeIdUpdate) {
+                            return { ...m, estado: 'LEIDO' };
+                        }
+
+                        return m;
+                    })
+                }));
+
+                return { ...oldData, pages: nuevasPaginas };
             });
-
-            // IMPORTANTE: Forzar notificación a React Query para que re-renderice
-            queryClient.invalidateQueries({ 
-                queryKey: ['chat', Number(update.chatId), 'messages'],
-                refetchType: 'none' // No refetch, solo notificar observadores
-            });
-
-            // Actualizar sidebar con nuevo estado
-            queryClient.setQueryData(['chats', 'sidebar'], (oldSidebar: any[] | undefined) => {
-                if (!oldSidebar) return [];
+            // Actualizar Sidebar
+            queryClient.setQueryData<TypeContacto[]>(['chats', 'sidebar'], (oldSidebar = []) => {
                 return oldSidebar.map(c => {
-                    if (String(c.chat_id || c.chatId) === String(update.chatId)) {
+                    if (String(c.chat_id || c.chat_id) === String(chatIdUpdate)) {
                         return { ...c, ultimo_mensaje_estado: update.estado };
                     }
                     return c;
@@ -169,23 +176,15 @@ export const useSocketEvents = (
         });
 
         // =================================================================
-        // C. ACTUALIZACIÓN ESTADO CHAT (/user/queue/chat/actualizacion-estado)
-        // (Resetear contador a 0 y marcar todo como leído en el sidebar)
+        // C. ACTUALIZACIÓN ESTADO CHAT (Sidebar)
         // =================================================================
         const subEstadoSidebar = clientRef.current.subscribe('/user/queue/chat/actualizacion-estado', (msg: any) => {
             const update = JSON.parse(msg.body);
 
-            queryClient.setQueryData(['chats', 'sidebar'], (oldSidebar: any[] | undefined) => {
-                if (!oldSidebar) return [];
-
+            queryClient.setQueryData<TypeContacto[]>(['chats', 'sidebar'], (oldSidebar = []) => {
                 return oldSidebar.map(c => {
-                    // Buscamos el chat
-                    if (String(c.chat_id || c.chatId) === String(update.chatId || update.chat_id)) {
-                        return {
-                            ...c,
-                            ultimo_mensaje_estado: "LEIDO",
-                            cantidadNoLeidos: 0
-                        };
+                    if (String(c.chat_id || c.chat_id) === String(update.chatId || update.chat_id)) {
+                        return { ...c, ultimo_mensaje_estado: "LEIDO", cantidadNoLeidos: 0 };
                     }
                     return c;
                 });
@@ -198,5 +197,5 @@ export const useSocketEvents = (
             subEstadoSidebar.unsubscribe();
         };
 
-    }, [isConnected, activeChatId, queryClient, user]); // Se recrea si cambia el chat activo
+    }, [isConnected, activeChatId, queryClient, user]);
 };

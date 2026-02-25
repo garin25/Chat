@@ -10,10 +10,16 @@ import com.example.demo.excepciones.RecursoNoEncontradoException;
 import com.example.demo.excepciones.RecursoRepetidoException;
 import com.example.demo.infraestructura.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -41,6 +47,7 @@ public class ServicioChatImpl implements ServicioChat {
 
 
     @Override
+    @Cacheable(value = "sidebar", key = "#miId")
     public List<ChatSidebarDTO> getSidebarChats(Long miId) {
         List<Chat> chats = repositorioChat.encontrarMisChatsCompletos(miId);
         Map<Long, String> mapaDeAlias = obtenerMapaDeAlias(miId);
@@ -71,6 +78,7 @@ public class ServicioChatImpl implements ServicioChat {
     }
 
     @Override
+    @CacheEvict(value = "sidebar", allEntries = true)
     public Mensaje enviarAlChat(Long miId, Long chatId, String contenido) {
         Chat chat = repositorioChat.findById(chatId).orElseThrow();
         Optional<Usuario> usuario = repositorioLogin.findById(miId);
@@ -85,11 +93,12 @@ public class ServicioChatImpl implements ServicioChat {
         chat.setUltimoMensajeSenderId(miId);
         chat.setUltimoMensajeEstado(EstadoMensaje.ENVIADO);
         repositorioChat.save(chat); // Actualizamos el chat
-        return  repositorioMensaje.save(mensaje);
+        return repositorioMensaje.save(mensaje);
     }
 
     @Transactional
     @Override
+    @CacheEvict(value = "sidebar", allEntries = true)
     public Contacto agendarContacto(Usuario usuarioTitular, NewContactDTO contactoDTO) {
 
         // 1. Validar que el usuario a agendar exista
@@ -142,8 +151,9 @@ public class ServicioChatImpl implements ServicioChat {
 
     @Transactional
     @Override
+    @CacheEvict(value = "sidebar", allEntries = true)
     public Chat crearGrupo(Usuario yo, NewGroupDTO body) {
-        if(body.getIntegrantes().isEmpty()){
+        if (body.getIntegrantes().isEmpty()) {
             throw new RecursoNoEncontradoException("Los integrantes son obligatorios");
         }
         // 1. Crear y guardar el Chat primero
@@ -151,8 +161,8 @@ public class ServicioChatImpl implements ServicioChat {
         chat.setTipo("group");
         chat.setCreatedAt(LocalDateTime.now());
         chat.setNombre(body.getNombreGrupo());
-        chat.setAvatarUrl("https://i.pravatar.cc/150?u="+body.getNombreGrupo());
-       Chat chatReturning  = repositorioChat.save(chat);
+        chat.setAvatarUrl("https://i.pravatar.cc/150?u=" + body.getNombreGrupo());
+        Chat chatReturning = repositorioChat.save(chat);
 
         // 2. USAR UN SET PARA EVITAR DUPLICADOS AUTOMÁTICAMENTE
         // Agregamos todos los IDs que vinieron del front
@@ -165,7 +175,7 @@ public class ServicioChatImpl implements ServicioChat {
         for (Long userId : participantesUnicos) {
             System.out.println("🔍 Buscando usuario con ID: " + userId);
             Usuario usuario = repositorioLogin.findById(userId)
-                    .orElseThrow(() ->new RecursoNoEncontradoException("❌ ERROR CRÍTICO: No existe el usuario con ID " + userId + " en la tabla Usuarios."));
+                    .orElseThrow(() -> new RecursoNoEncontradoException("❌ ERROR CRÍTICO: No existe el usuario con ID " + userId + " en la tabla Usuarios."));
 
             Participante participante = new Participante();
             participante.setChat(chatReturning);
@@ -182,6 +192,7 @@ public class ServicioChatImpl implements ServicioChat {
 
     @Transactional
     @Override
+    @CacheEvict(value = "sidebar", allEntries = true)
     public List<Mensaje> marcarMensajesComoLeidos(Long chatId, Long lectorId) {
 
         // 1. Buscamos los mensajes que están pendientes de leer
@@ -225,22 +236,48 @@ public class ServicioChatImpl implements ServicioChat {
         return mensajesActualizados;
     }
 
-    @Override
+   /* @Override
     public List<MensajeDTO> getMensajesPorChat(Long miId, Long chatId) throws RecursoNoEncontradoException {
-        boolean esParticipante = repositorioParticipante.existsByChatIdAndUsuarioId(chatId,miId);
-        if(!esParticipante){
+        boolean esParticipante = repositorioParticipante.existsByChatIdAndUsuarioId(chatId, miId);
+        if (!esParticipante) {
             throw new RecursoNoEncontradoException("El usuario no participa en ese chat");
         }
-        List<Mensaje>mensajes =  repositorioMensaje.findAllByChatIdOrderBySentAtAsc(chatId);
+        List<Mensaje> mensajes = repositorioMensaje.findAllByChatIdOrderBySentAtAsc(chatId);
         return mensajeMapper.toDtoList(mensajes);
+    }*/
+
+    @Override
+    public Page<MensajeDTO> getMensajesPorChat(Long miId, Long chatId,int page, int size) throws RecursoNoEncontradoException {
+        boolean esParticipante = repositorioParticipante.existsByChatIdAndUsuarioId(chatId, miId);
+        if (!esParticipante) {
+            throw new RecursoNoEncontradoException("El usuario no participa en ese chat");
+        }
+        Pageable paginador = PageRequest.of(page, size);
+
+        // Buscamos en la BD usando el paginador
+        Page<Mensaje> paginaMensajes = repositorioMensaje.findMensajesPorChatPaginados(chatId, paginador);
+
+        // Convertir un Page<Mensaje> a Page<MensajeDTO> usando map()
+        return paginaMensajes.map(mensaje -> {
+            MensajeDTO dto = new MensajeDTO();
+            dto.setId(mensaje.getId());
+            dto.setContenido(mensaje.getContenido());
+            dto.setSentAt(mensaje.getSentAt());
+            dto.setChatId(chatId);
+            dto.setEstado(mensaje.getEstado());
+            dto.setSender(new MensajeDTO.SenderDTO(mensaje.getSender().getId(),mensaje.getSender().getNombre(),mensaje.getSender().getAvatarUrl()));
+
+            return dto;
+        });
     }
 
     @Override
-    public Mensaje findMensajeById(Long id){
-        return  repositorioMensaje.findById(id).get();
+    public Mensaje findMensajeById(Long id) {
+        return repositorioMensaje.findById(id).get();
     }
-     @Override
-     public Mensaje saveMensaje(Mensaje mensaje){
+
+    @Override
+    public Mensaje saveMensaje(Mensaje mensaje) {
         return repositorioMensaje.save(mensaje);
     }
 
@@ -248,7 +285,7 @@ public class ServicioChatImpl implements ServicioChat {
     public List<BusquedaResponseDTO> buscarCoincidencias(Usuario yo, BusquedaDTO body) {
         //buscar mensajes dondo yo sea el emisor o receptor donde el mensaje contenga ese string
         //buscar mensajes de chat donde sea participante que contenga ese string
-        List<Mensaje> mensajes = repositorioMensaje.buscarCoincidencias(yo.getId(),body.getData());
+        List<Mensaje> mensajes = repositorioMensaje.buscarCoincidencias(yo.getId(), body.getData());
         return busquedaMensajeMapper.toDtoList(mensajes);
     }
 
@@ -289,8 +326,9 @@ public class ServicioChatImpl implements ServicioChat {
     }
 
 
-        @Override
-        public String procesarLecturaYNotificar(Long chatId, Long lectorId){
+    @Override
+    @CacheEvict(value = "sidebar", allEntries = true)
+    public String procesarLecturaYNotificar(Long chatId, Long lectorId) {
         // 1. Actualizar DB y obtener mensajes actualizados
         List<Mensaje> mensajesActualizados = marcarMensajesComoLeidos(chatId, lectorId);
 

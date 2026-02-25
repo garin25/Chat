@@ -39,6 +39,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
     localStorage.removeItem("token");
     localStorage.removeItem("usuario");
+    window.location.href = '/wsp/login'; // recargamos la pagina para limpiar stomp 
   };
 
   return (

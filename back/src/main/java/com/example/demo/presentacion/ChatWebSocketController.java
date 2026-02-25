@@ -23,6 +23,7 @@ public class ChatWebSocketController {
     private ServicioChatImpl servicioChat;
     @Autowired
     private SimpMessagingTemplate messagingTemplate;
+
     @MessageMapping("/chat/message-delivered")
     public void confirmarEntrega(@Payload @Valid ConfirmacionDTO confirmacion) {
         // 1. Buscar mensaje y actualizar estado a ENTREGADO en DB
