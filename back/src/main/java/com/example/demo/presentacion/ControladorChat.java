@@ -8,6 +8,8 @@ import com.example.demo.entidades.*;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
@@ -107,5 +109,24 @@ public class ControladorChat {
     @GetMapping("/{id}")
     public ResponseEntity<?> obtenerDetalleChat(@PathVariable Long id ,@UsuarioAutenticado Usuario yo) {
         return ResponseEntity.ok(servicioChat.getChatHeaderInfo(id,yo.getId()));
+    }
+
+    @GetMapping("/{chatId}/messages/{mensajeId}/contexto")
+    public ResponseEntity<?> obtenerContextoBusqueda(
+            @PathVariable Long chatId,
+            @PathVariable Long mensajeId) {
+
+        List<MensajeDTO> mensajesContexto = servicioChat.obtenerContextoDeMensaje(chatId, mensajeId);
+
+        // TRUCO: Lo envolvemos en un PageImpl falso para que el Frontend de React
+        // (que espera lastPage.page.number, etc) lo pueda procesar sin romper su tipado.
+        // Le decimos que es la "página 0" y que es la única página que hay por ahora.
+        PageImpl<MensajeDTO> paginaFalsa = new PageImpl<>(
+                mensajesContexto,
+                PageRequest.of(0, mensajesContexto.size()),
+                mensajesContexto.size()
+        );
+
+        return ResponseEntity.ok(paginaFalsa);
     }
 }

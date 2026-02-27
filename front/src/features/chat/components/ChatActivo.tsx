@@ -9,6 +9,8 @@ import { StatusEnLinea } from "./StatusEnLinea";
 import { useInfiniteQuery, useQueryClient, type InfiniteData } from "@tanstack/react-query";
 import { ChatService } from "../services/chat.service";
 import type { TypeContacto } from "../interfaces/contacto.interface";
+import type { SpringPage } from "../interfaces/page.interface";
+import { set } from "zod";
 
 interface ChatProps {
     idChatSeleccionado: number | null,
@@ -19,13 +21,11 @@ interface ChatProps {
     isConnected: boolean,
     mensajeIdParaEnfocar: number | null,
     setMensajeIdParaEnfocar: (id: number | null) => void;
+    viendoHistorial: boolean;
+    volverAlPresente: () => void;
+    setEnBusqueda: (enBusqueda: boolean) => void;
 }
-interface SpringPage<T> {
-    content: T[];
-    last: boolean;
-    number: number;
-}
-export const ChatActivo = ({ idChatSeleccionado, enviarMensaje, headerContactSelected, onBack, clientRef, isConnected, mensajeIdParaEnfocar, setMensajeIdParaEnfocar }: ChatProps) => {
+export const ChatActivo = ({ idChatSeleccionado, enviarMensaje, headerContactSelected, onBack, clientRef, isConnected, mensajeIdParaEnfocar, setMensajeIdParaEnfocar,viendoHistorial, volverAlPresente,setEnBusqueda }: ChatProps) => {
     const queryClient = useQueryClient();
     const { user } = useAuth();
     const topObserverRef = useRef(null);
@@ -35,6 +35,8 @@ export const ChatActivo = ({ idChatSeleccionado, enviarMensaje, headerContactSel
     const scrollHeightPrevio = useRef<number>(0); // Para recordar cuánto medía
     // Para saber si el usuario acaba de hacer clic en otro contacto
     const chatIdAnterior = useRef(idChatSeleccionado);
+    // Este es nuestro seguro. El observer no dispara si esto es false.
+    const scrollInicialListo = useRef(false);
 
     const chatIdNumerico = Number(idChatSeleccionado);
     const {
@@ -59,20 +61,18 @@ export const ChatActivo = ({ idChatSeleccionado, enviarMensaje, headerContactSel
     useEffect(() => {
         const observer = new IntersectionObserver(
             (entries) => {
-                if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
-                    // 👇 MAGIA: Guardamos la altura de la caja antes de pedir la data
+                // 👇 SOLO DISPARA SI EL SCROLL INICIAL YA SE HIZO 👇
+                if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage && scrollInicialListo.current) {
                     if (scrollContainerRef.current) {
                         scrollHeightPrevio.current = scrollContainerRef.current.scrollHeight;
                     }
                     fetchNextPage();
                 }
             },
-            { threshold: 0.1 } // Bajale el threshold a 0.1 para que dispare más fácil
+            { threshold: 0.1 }
         );
 
-        if (topObserverRef.current) {
-            observer.observe(topObserverRef.current);
-        }
+        if (topObserverRef.current) observer.observe(topObserverRef.current);
         return () => observer.disconnect();
     }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
@@ -93,71 +93,6 @@ export const ChatActivo = ({ idChatSeleccionado, enviarMensaje, headerContactSel
 
     // 2. Hook de Presencia (Si targetUserId es null, el hook no hace nada)
     const { estado, ultimaVez } = usePresencia(targetUserId, clientRef, isConnected);
-
-    // 2. FUNCIÓN PARA SCROLLEAR AL FONDO
-    const scrollToBottom = (instantaneo = false) => {
-        // Si es instantáneo (al abrir el chat), usamos 'auto' para que no maree
-        // Si es un mensaje nuevo, usamos 'smooth' para que se vea bonito
-        const behavior = instantaneo ? "auto" : "smooth";
-        messagesEndRef.current?.scrollIntoView({ behavior: behavior });
-    };
-
-    useEffect(() => {
-    const cantidadActual = mensajesOrdenados?.length || 0;
-
-    // REGLA 1: ¿Cambiamos de chat?
-    if (chatIdAnterior.current !== idChatSeleccionado) {
-        chatIdAnterior.current = idChatSeleccionado;
-        cantidadAnteriorMensajes.current = cantidadActual;
-        
-        // Esperamos 50ms para que React termine de dibujar las burbujas en el HTML
-        setTimeout(() => scrollToBottom(true), 50);
-        return;
-    }
-
-    const diferencia = cantidadActual - cantidadAnteriorMensajes.current;
-    cantidadAnteriorMensajes.current = cantidadActual;
-
-    // REGLA 2: Carga inicial de un chat (ej: F5 o cuando React Query trae los datos)
-    if (cantidadActual > 0 && diferencia === cantidadActual) {
-        setTimeout(() => scrollToBottom(true), 50);
-        return;
-    }
-
-    // REGLA 3: Mantener la posición al cargar mensajes viejos (Scroll hacia arriba)
-    if (diferencia > 10 && scrollContainerRef.current) {
-        const alturaNueva = scrollContainerRef.current.scrollHeight;
-        const pixelesAgregados = alturaNueva - scrollHeightPrevio.current;
-        scrollContainerRef.current.scrollTop = pixelesAgregados;
-        return;
-    }
-
-    // REGLA 4: Mensaje nuevo en vivo (Bajamos suavemente)
-    if (diferencia > 0 && diferencia <= 10) {
-        setTimeout(() => scrollToBottom(false), 50);
-    }
-
-}, [mensajesOrdenados, idChatSeleccionado]);
-
-    useEffect(() => {
-        if (mensajeIdParaEnfocar && mensajesOrdenados != null) {
-            // Buscamos el div del mensaje por su ID
-            const elemento = document.getElementById(`msg-${mensajeIdParaEnfocar}`);
-
-            if (elemento) {
-                elemento.scrollIntoView({ behavior: 'smooth', block: 'center' });
-
-                // Le damos un toque visual para que se note cuál es
-                elemento.classList.add('mensaje-resaltado');
-
-                // Limpiamos el estado después de scrollear
-                setTimeout(() => {
-                    elemento.classList.remove('mensaje-resaltado');
-                    setMensajeIdParaEnfocar(null);
-                }, 2000);
-            }
-        }
-    }, [mensajeIdParaEnfocar, mensajesOrdenados]);
 
 
     //Marcar como LEIDO al abrir chat 
@@ -213,6 +148,117 @@ export const ChatActivo = ({ idChatSeleccionado, enviarMensaje, headerContactSel
             );
         }
     }, [data, idChatSeleccionado, chatIdNumerico, queryClient, user?.id]);
+
+    // =========================================================
+    // 1. FUNCIÓN DE SCROLL AL FONDO (Versión Robusta)
+    // =========================================================
+    const forzarScrollAlFondo = (suave = false) => {
+        if (scrollContainerRef.current) {
+            scrollContainerRef.current.scrollTo({
+                top: scrollContainerRef.current.scrollHeight,
+                behavior: suave ? 'smooth' : 'auto'
+            });
+            scrollInicialListo.current = true; // ¡Quitamos el seguro del gatillo!
+        }
+    };
+
+    // =========================================================
+    // 2. EL EFECTO MAESTRO (Controla el scroll general y la búsqueda)
+    // =========================================================
+    useEffect(() => {
+        // Si no hay mensajes, reseteamos el seguro y salimos
+        if (!mensajesOrdenados || mensajesOrdenados.length === 0) {
+            scrollInicialListo.current = false;
+            return;
+        }
+
+        const cantidadActual = mensajesOrdenados.length;
+
+        // ¿El usuario cambió de chat? Reseteamos contadores
+        if (chatIdAnterior.current !== idChatSeleccionado) {
+            chatIdAnterior.current = idChatSeleccionado;
+            cantidadAnteriorMensajes.current = cantidadActual;
+            scrollInicialListo.current = false; // Ponemos el seguro
+        }
+
+        const diferencia = cantidadActual - cantidadAnteriorMensajes.current;
+        cantidadAnteriorMensajes.current = cantidadActual;
+
+        // Usamos requestAnimationFrame doble para asegurarnos de que el HTML 
+        // ya se dibujó completamente en la pantalla antes de mover el scroll.
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+
+                // -------------------------------------------
+                // ESCENARIO A: MODO BÚSQUEDA
+                // -------------------------------------------
+                if (mensajeIdParaEnfocar) {
+                    const elemento = document.getElementById(`msg-${mensajeIdParaEnfocar}`);
+                    if (elemento) {
+                        // ÉXITO: Está cargado. Saltamos y quitamos seguro.
+                        elemento.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        elemento.classList.add('mensaje-resaltado');
+
+                        setTimeout(() => {
+                            elemento.classList.remove('mensaje-resaltado');
+                            setMensajeIdParaEnfocar(null);
+                        }, 2000);
+
+                        scrollInicialListo.current = true;
+                    } else {
+                        // FALLO: Es muy viejo. Abortamos y mandamos al fondo.
+                        alert("Este mensaje es antiguo. Pronto habilitaremos la navegación al historial completo.");
+                        setMensajeIdParaEnfocar(null);
+                        forzarScrollAlFondo(false);
+                    }
+                    return; // Cortamos la ejecución acá para que no pase al Escenario B
+                }
+
+                // -------------------------------------------
+                // ESCENARIO B: CARGA NORMAL O CHATEANDO
+                // -------------------------------------------
+
+                // 1. Recién abrimos el chat (primer render)
+                if (!scrollInicialListo.current) {
+                    forzarScrollAlFondo(false);
+                }
+                // 2. Cargamos historial viejo (frenamos el salto mortal hacia abajo)
+                else if (diferencia > 10 && scrollContainerRef.current) {
+                    const pixelesAgregados = scrollContainerRef.current.scrollHeight - scrollHeightPrevio.current;
+                    scrollContainerRef.current.scrollTop = pixelesAgregados;
+                }
+                // 3. Llegó un mensaje nuevo en tiempo real (bajamos suave)
+                else if (diferencia > 0 && diferencia <= 10) {
+                    forzarScrollAlFondo(true);
+                }
+
+            });
+        });
+
+    }, [mensajesOrdenados, idChatSeleccionado, mensajeIdParaEnfocar, setMensajeIdParaEnfocar]);
+
+    const saltarAlPresente = () => {
+
+        // 1. Apagamos el modo historial
+        volverAlPresente();
+        //1.1 ponemos el busqueda en false para ya no mostrar las coindicencias 
+        setEnBusqueda(false);
+        //Limpiamos el mensajeIdParaEnfocar para que no intente buscarlo más
+        setMensajeIdParaEnfocar(null);
+
+        // 2. Le decimos a React Query: "Borrá el sánguche falso y traé la verdad de Spring Boot"
+        queryClient.invalidateQueries({
+            queryKey: ['mensajes', chatIdNumerico],
+            refetchType: 'all'
+        });
+
+        // 3. Forzamos el scroll al fondo (Opcional, el Efecto Maestro debería atajarlo igual)
+        setTimeout(() => {
+            if (scrollContainerRef.current) {
+                scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
+            }
+        }, 200);
+    };
     return (
 
         <div className="chat-window">
@@ -290,6 +336,28 @@ export const ChatActivo = ({ idChatSeleccionado, enviarMensaje, headerContactSel
                 {/* Este div vacío siempre estará al final. React scrolleará hasta aquí. */}
                 <div ref={messagesEndRef} />
             </div>
+
+            {/* 👇 EL BOTÓN DE ESCAPE DEL PASADO 👇 */}
+            {viendoHistorial && (
+                <button
+                    onClick={saltarAlPresente}
+                    style={{
+                        position: 'absolute',
+                        bottom: '80px', // Ajustá esto para que quede arriba del input
+                        right: '20px',
+                        padding: '10px 15px',
+                        backgroundColor: '#25D366',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '20px',
+                        cursor: 'pointer',
+                        boxShadow: '0 2px 5px rgba(0,0,0,0.2)',
+                        zIndex: 1000
+                    }}
+                >
+                    ⬇️ Volver al presente
+                </button>
+            )}
 
             <div className="chat-input-area">
                 <InputMessage

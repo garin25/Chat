@@ -18,7 +18,7 @@ export const Busqueda = ({ coincidencias, cargando, seleccionarChat }: Props) =>
                     {coincidencias.map((mensaje) => {
                         return (
                             <div key={mensaje.id} className="contact-item" onClick={() => {
-                                console.log("Chat id seleccionado desde coincidencias " + mensaje.chatId);
+                                console.log("Chat id seleccionado desde coincidencias " + mensaje.chatId + " Mensaje id seleccionado desde coincidencias " + mensaje.id);
                                     seleccionarChat(mensaje.chatId,mensaje.id);
                             }} >
 

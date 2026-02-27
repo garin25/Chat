@@ -34,7 +34,9 @@ export const Wsp = () => {
     enviarMensaje,
     recargarContactos,
     mensajeIdParaEnfocar,
-    setMensajeIdParaEnfocar
+    setMensajeIdParaEnfocar,
+    viendoHistorial,
+    volverAlPresente
   } = useChatMessages(clientRef, isConnected, user);
    
 
@@ -84,6 +86,8 @@ export const Wsp = () => {
     }
   }
 
+
+ 
   return (
     <div className="app-container">
 
@@ -124,13 +128,15 @@ export const Wsp = () => {
           <ChatActivo
             enviarMensaje={enviarMensaje}
             idChatSeleccionado={idChatSeleccionado}
-            //mensajesDelChat={historialDeMensajes}
             headerContactSelected={headerContactSelected}
             onBack={handleVolver}
             clientRef={clientRef}
             isConnected={isConnected}
             mensajeIdParaEnfocar={mensajeIdParaEnfocar}
             setMensajeIdParaEnfocar={setMensajeIdParaEnfocar}
+            viendoHistorial={viendoHistorial}
+            volverAlPresente={volverAlPresente}
+            setEnBusqueda={setEnBusqueda}
           />
         ) : (
           <div className="placeholder-desktop">Selecciona un chat</div>

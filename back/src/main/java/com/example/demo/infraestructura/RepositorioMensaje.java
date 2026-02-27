@@ -41,4 +41,14 @@ public interface RepositorioMensaje  extends JpaRepository<Mensaje,Long> {
 
     @Query("SELECT m FROM Mensaje m WHERE m.chat.id = :chatId ORDER BY m.sentAt DESC")
     Page<Mensaje> findMensajesPorChatPaginados(@Param("chatId") Long chatId, Pageable pageable);
+
+    // 1. Trae los mensajes ANTERIORES (más viejos).
+    // Usamos LessThan y ordenamos DESC para agarrar los 20 inmediatos anteriores.
+    List<Mensaje> findTop20ByChatIdAndIdLessThanOrderByIdDesc(Long chatId, Long mensajeId);
+
+    // 2. Trae los mensajes POSTERIORES (más nuevos).
+    // Usamos GreaterThan y ordenamos ASC para agarrar los 20 inmediatos posteriores.
+    List<Mensaje> findTop20ByChatIdAndIdGreaterThanOrderByIdAsc(Long chatId, Long mensajeId);
+
+    Optional<Mensaje> findByIdAndChatId(Long id, Long chatId);
 }

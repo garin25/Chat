@@ -19,7 +19,6 @@ export const InputMessage = ({ onSend, idChat, clientRef }: InputProps) => {
 
     const handleEnviar = () => {
         if (!texto.trim()) return;
-        console.log("Enviando mensaje:", texto , "usuario:", user);
         onSend(texto);
         setTexto("");
         notificarEscritura("");

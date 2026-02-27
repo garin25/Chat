@@ -50,5 +50,11 @@ export const ChatService = {
         const chatId = queryKey[1]; // Sacamos el ID de la key de TanStack
         const res = await apiInstance.get(`/api/chats/${chatId}/messages?page=${pageParam}&size=50`);
         return res.data;
-    }
+    },
+
+    obtenerContextoMensaje : async (chatId: number, mensajeId: number) => {
+    // Ajustá la ruta según cómo esté configurado tu axios
+    const response = await apiInstance.get(`/api/chats/${chatId}/messages/${mensajeId}/contexto`);
+    return response.data; // Retornamos el JSON tal cual
+}
 };

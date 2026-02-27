@@ -41,4 +41,7 @@ public interface ServicioChat {
     NotificacionDTO procesarYEnviarMensaje(Mensaje mensajeGuardado);
 
     String procesarLecturaYNotificar(Long chatId, Long lectorId);
+
+    @Transactional(readOnly = true)
+    List<MensajeDTO> obtenerContextoDeMensaje(Long chatId, Long mensajeId);
 }

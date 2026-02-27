@@ -21,6 +21,7 @@ export const useChatMessages = (
     // Solo guardamos lo que es "interacción del usuario", no los datos.
     const [idChatSeleccionado, setIdChatSeleccionado] = useState<number | null>(null);
     const [mensajeIdParaEnfocar, setMensajeIdParaEnfocar] = useState<number | null>(null);
+    const [viendoHistorial, setViendoHistorial] = useState(false);
 
     // Ref para trackear si ya marcamos como leído este chat
     const chatMarcadoComoLeidoRef = useRef<Set<number>>(new Set());
@@ -51,16 +52,38 @@ export const useChatMessages = (
     // --- 4. ACCIONES (Functions) ---
 
     // A. Seleccionar Chat
-    const seleccionarChat = (chatId: number | null, mensajeId?: number) => {
-        if (chatId === null) {
-            setIdChatSeleccionado(null);
-            return;
+    const seleccionarChat = async (chatId: number | null, mensajeId?: number) => {
+      if (chatId === null) {
+        setIdChatSeleccionado(null);
+        setViendoHistorial(false); // Reseteamos
+        return;
+    }
+
+    if (mensajeId) {
+        try {
+            const contexto = await ChatService.obtenerContextoMensaje(chatId, mensajeId);
+            
+            // ¡PISAMOS LA CACHÉ!
+            queryClient.setQueryData(['mensajes', Number(chatId)], {
+                pages: [contexto], 
+                pageParams: [0]
+            });
+
+            setMensajeIdParaEnfocar(mensajeId);
+            setViendoHistorial(true); // 👈 ¡ESTAMOS EN EL PASADO!
+
+        } catch (error) {
+            console.error("Error al cargar el contexto:", error);
+            setViendoHistorial(false);
         }
-
+    } else {
+        setMensajeIdParaEnfocar(null);
+        setViendoHistorial(false); // 👈 Clic normal en el sidebar = Presente
+    }
+        // 4. Abrimos el chat (esto dispara el renderizado de ChatActivo.tsx)
         setIdChatSeleccionado(chatId);
-        if (mensajeId) setMensajeIdParaEnfocar(mensajeId);
 
-        // Optimistic Update: Marcar como leído en el Sidebar
+        // 5. Actualizamos el estado de "Leído" en el Sidebar visualmente
         queryClient.setQueryData(['chats', 'sidebar'], (old: any[] = []) =>
             old.map(c => c.chat_id === chatId ? { ...c, cantidadNoLeidos: 0, ultimo_mensaje_estado: 'LEIDO' } : c)
         );
@@ -206,6 +229,8 @@ export const useChatMessages = (
         enviarMensaje,          // Función Wrapper de Mutación
         recargarContactos,      // Función de React Query
         mensajeIdParaEnfocar,   // Estado Local
-        setMensajeIdParaEnfocar // Setter Local
+        setMensajeIdParaEnfocar, // Setter Local
+        viendoHistorial, 
+        volverAlPresente: () => setViendoHistorial(false)
     };
 };
