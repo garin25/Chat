@@ -51,7 +51,7 @@ body {
 .app-container {
   display: flex;        /* Pone la sidebar y el chat uno al lado del otro */
   width: 100vw;         /* Ancho total de la ventana */
-  height: calc(100vh - 70px);       /* Le resto el navbar */
+  height: 100vh;     
   overflow: hidden;     /* Evita que aparezca scroll en toda la página */
   background-color: var(--bg-app);
 }
@@ -88,6 +88,7 @@ body {
 /* Contenedor de Botones (para que no se separen entre sí) */
 .header-actions {
     display: flex;
+    align-items: center;
     gap: 15px; /* Espacio entre el botón de contacto y el de grupo */
 }
 
@@ -294,42 +295,80 @@ body {
     transition: background-color 0.5s ease;
     border-radius: 8px;
 }
-
-/* --- ÁREA DEL INPUT (Fija abajo) --- */
+/* Contenedor principal del input */
 .chat-input-area {
-  flex-shrink: 0;         /* Prohibido encogerse */
-  padding: 10px 16px;
-  background-color: var(--bg-card); /* Fondo de la barra */
-  width: 100%;            
-  display: flex;
-  align-items: center;
-  gap: 10px;
+    padding: 10px 16px;
+    background-color: #202c33; /* Fondo oscuro clásico de WA */
+    border-top: 1px solid #313d45; /* Borde sutil separador */
+    width: 100%;
+    box-sizing: border-box;
 }
 
-/* Input específico del chat */
-.chat-input-area input {
-  flex: 1;
-  background-color: var(--bg-input); 
-  border: none;
-  border-radius: 8px;
-  padding: 9px 12px;
-  color: var(--text-primary);
-  font-size: 15px;
-  outline: none;
+/* Envoltorio relativo para poder flotar el botón adentro */
+.input-wrapper {
+    position: relative;
+    width: 100%;
 }
 
-.chat-input-area button {
-  background: transparent;
-  border: none;
-  color: var(--text-secondary); 
-  cursor: pointer;
-  font-size: 1.2rem;
-  padding: 0 10px;
-}
-.chat-input-area button:hover {
-    color: var(--text-primary);
+/* El input de texto */
+.input-message {
+    width: 100%;
+    padding: 12px 16px;
+    padding-right: 80px; /* IMPORTANTE: Deja espacio para el botón */
+    border-radius: 8px;
+    background-color: #2a3942; /* Fondo del input un poco más claro que el fondo general */
+    color: #d1d7db; /* Texto blanco/grisáceo */
+    border: 1px solid transparent; /* Sin borde por defecto */
+    outline: none;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+    box-sizing: border-box;
+    font-size: 1rem;
 }
 
+/* Color del placeholder (el texto "Escribe un mensaje...") */
+.input-message::placeholder {
+    color: #8696a0;
+}
+
+/* Efecto cuando el usuario hace clic en el input */
+.input-message:focus {
+    background-color: #2a3942;
+    border-color: #313d45; /* Le damos un borde muy sutil al hacer foco */
+}
+
+/* Efecto cuando no hay chat seleccionado */
+.input-message:disabled {
+    background-color: #202c33;
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* El botón flotante */
+.btn-enviar {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #00a884; /* Verde clásico de WhatsApp para destacar */
+    background: transparent;
+    border: none;
+    padding: 8px;
+    font-weight: bold;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: color 0.2s ease, opacity 0.2s ease;
+}
+
+/* Efecto hover solo si el botón NO está deshabilitado */
+.btn-enviar:hover:not(:disabled) {
+    color: #00c298; /* Un verde un poco más brillante al pasar el mouse */
+}
+
+/* Efecto cuando el input está vacío */
+.btn-enviar:disabled {
+    color: #8696a0; /* Se vuelve gris si no hay texto */
+    cursor: default;
+}
 /* Por defecto (Desktop), el botón volver no se ve */
 .btn-back {
     color: white;
@@ -541,7 +580,63 @@ input::placeholder {
     background-color: #111b21;
     overflow: auto;
 }
+.logout-btn {
+  max-height: 50px;
+  background-color: transparent;
+  border: 1px solid #f15c6d; /* Borde rojo suave */
+  padding:6px 16px;
+  color: #f15c6d;
+  border-radius: 20px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s;
+}
 
+.logout-btn:hover {
+  background-color: #f15c6d;
+  color: #111b21;
+}
+
+/* =========================================
+   FILTROS DEL SIDEBAR
+   ========================================= */
+.filtros-container {
+    display: flex;
+    gap: 8px;
+    padding: 8px 16px;
+    background-color: var(--bg-sidebar);
+    overflow-x: auto; /* Permite scroll horizontal si los botones no entran en pantallas chicas */
+    border-bottom: 1px solid #202c33; /* Separador sutil con la lista */
+    /* Ocultamos la barra de scroll visualmente pero mantenemos la funcionalidad */
+    scrollbar-width: none; 
+}
+
+.filtros-container::-webkit-scrollbar {
+    display: none; 
+}
+
+.filtro-btn {
+    background-color: #202c33; /* Fondo inactivo */
+    color: var(--text-secondary); /* Texto grisáceo */
+    border: none;
+    padding: 6px 14px;
+    border-radius: 20px; /* Estilo píldora */
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap; /* Evita que el texto se parta en dos líneas */
+    transition: all 0.2s ease;
+}
+
+.filtro-btn:hover {
+    background-color: #2a3942;
+}
+
+/* El estilo de la píldora que está seleccionada actualmente */
+.filtro-btn.activo {
+    background-color: #0a332c; /* Fondo verde muy oscuro */
+    color: #00a884; /* Texto verde resaltado */
+}
 @keyframes fadeIn {
     from { opacity: 0; }
     to { opacity: 1; }
@@ -570,4 +665,85 @@ input::placeholder {
     .app-container {
         padding: 0;
     }
+}
+
+/*boton favorito*/
+.favorite-btn {
+    background: transparent;
+    border: none;
+    padding: 8px;
+    cursor: pointer;
+    outline: none;
+    
+    /* Lo posicionamos a la derecha del todo */
+    margin-left: auto; 
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    /* Animación suave al cambiar de estado */
+    transition: transform 0.2s ease-in-out;
+}
+
+/* Efecto sutil de agrandado al pasar el mouse */
+.favorite-btn:hover {
+    transform: scale(1.1);
+}
+
+/* --- Estilo del corazón VACÍO (No favorito) --- */
+.favorite-btn .icon-outline {
+    color: #8696a0; /* Gris secundario del modo oscuro */
+    font-size: 1.1rem; /* Ajustá el tamaño a gusto */
+    transition: color 0.2s ease;
+}
+
+/* Al pasar el mouse por arriba, se pre-visualiza en verde */
+.favorite-btn:hover .icon-outline {
+    color: #00a884; /* Verde WA */
+}
+
+/* --- Estilo del corazón RELLENO (Sí favorito) --- */
+.favorite-btn.is-favorite .icon-solid {
+    color: #00a884; /* Verde WA oficial */
+    font-size: 1.1rem;
+    /* Un pequeño efecto de "pop" al aparecer */
+    animation: heartPop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* Animación opcional de entrada del corazón relleno */
+@keyframes heartPop {
+    0% { transform: scale(0); }
+    100% { transform: scale(1); }
+}
+
+/*boton archivar*/
+/* Contenedor de las acciones rápidas */
+.chat-actions {
+    display: flex;
+    align-items: center;
+}
+
+/* Estilo base compartido para los botoncitos */
+.action-btn {
+    background: transparent;
+    border: none;
+    padding: 6px;
+    cursor: pointer;
+    color: #8696a0; /* Gris secundario */
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+}
+
+/* Efecto hover general */
+.action-btn:hover {
+    background-color: #202c33; /* Un fondo apenitas más claro */
+    color: #d1d7db; /* Texto más blanco */
+}
+
+/* Específico para archivar al hacer hover */
+.archive-btn:hover {
+    color: #00a884; /* Se pinta de verde WA al pasar el mouse */
 }

@@ -27,6 +27,8 @@ public class Participante {
 
     @Column(name = "is_admin")
     private Boolean isAdmin = false;
-
-    // Getters y Setters
+    @Column(name = "es_favorito", nullable = false, columnDefinition = "boolean default false")
+    private Boolean esFavorito = false;
+    @Column(name = "es_archivado", nullable = false, columnDefinition = "boolean default false")
+    private Boolean esArchivado = false;
 }

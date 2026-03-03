@@ -10,7 +10,6 @@ import { useInfiniteQuery, useQueryClient, type InfiniteData } from "@tanstack/r
 import { ChatService } from "../services/chat.service";
 import type { TypeContacto } from "../interfaces/contacto.interface";
 import type { SpringPage } from "../interfaces/page.interface";
-import { set } from "zod";
 
 interface ChatProps {
     idChatSeleccionado: number | null,
@@ -25,7 +24,8 @@ interface ChatProps {
     volverAlPresente: () => void;
     setEnBusqueda: (enBusqueda: boolean) => void;
 }
-export const ChatActivo = ({ idChatSeleccionado, enviarMensaje, headerContactSelected, onBack, clientRef, isConnected, mensajeIdParaEnfocar, setMensajeIdParaEnfocar,viendoHistorial, volverAlPresente,setEnBusqueda }: ChatProps) => {
+export const ChatActivo = ({ idChatSeleccionado, enviarMensaje, headerContactSelected, onBack, clientRef, isConnected, mensajeIdParaEnfocar, setMensajeIdParaEnfocar, viendoHistorial, volverAlPresente, setEnBusqueda }: ChatProps) => {
+    
     const queryClient = useQueryClient();
     const { user } = useAuth();
     const topObserverRef = useRef(null);
@@ -300,8 +300,6 @@ export const ChatActivo = ({ idChatSeleccionado, enviarMensaje, headerContactSel
                     </div>
                 </div>
             </div>)}
-
-
 
             {/* Opcional pero recomendado: Un indicador visual */}
             {isFetchingNextPage && (

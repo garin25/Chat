@@ -15,8 +15,6 @@ public interface ServicioChat {
 
     ChatSidebarDTO getChatHeaderInfo(Long chatId, Long miId);
 
-    List<MensajeDTO> getMensajesParaElNum(Long miId);
-
     Mensaje enviarAlChat(Long miId, Long chatId, String contenido);
 
     @Transactional
@@ -44,4 +42,8 @@ public interface ServicioChat {
 
     @Transactional(readOnly = true)
     List<MensajeDTO> obtenerContextoDeMensaje(Long chatId, Long mensajeId);
+
+    Participante toggleChatFavorito(Long chatId,Long miId);
+
+    Participante toggleChatArchivado(Long chatId, Long id);
 }

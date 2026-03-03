@@ -32,8 +32,7 @@ function App() {
           }}
           resetKeys={[clave]} // Si esta variable cambia, el boundary se resetea automáticamente
         >
-          {/* El Navbar se ve siempre (o puedes ocultarlo en login con lógica extra) */}
-          <Navbar />
+          {/* Por ahora saco el navbar para ahorrar espacio*/}
 
           <Routes>
             {/* RUTAS PÚBLICAS */}

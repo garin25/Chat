@@ -1,12 +1,12 @@
-import { useState,type KeyboardEvent,type ChangeEvent } from "react";
-import { useEscribiendo } from "../hooks"; 
+import { useState, type KeyboardEvent, type ChangeEvent } from "react";
+import { useEscribiendo } from "../hooks";
 import { useAuth } from "@/features/auth/AuthContext";
 
 interface InputProps {
     // Simplificamos las props. El input no necesita saber de 'sender_id' para enviar.
     // Solo necesita saber qué hacer cuando hay un texto nuevo.
     onSend: (texto: string) => void;
-    
+
     idChat: number | null;
     clientRef: React.MutableRefObject<any>;
 }
@@ -14,7 +14,7 @@ interface InputProps {
 export const InputMessage = ({ onSend, idChat, clientRef }: InputProps) => {
     const { user } = useAuth(); // Necesario para el hook de escribiendo
     const [texto, setTexto] = useState("");
-    
+
     const { notificarEscritura } = useEscribiendo(idChat, clientRef, user);
 
     const handleEnviar = () => {
@@ -38,23 +38,22 @@ export const InputMessage = ({ onSend, idChat, clientRef }: InputProps) => {
     };
 
     return (
-        <div className="chat-input-area p-2 border-t bg-white">
-            <div className="relative">
+        <div className="chat-input-area">
+            <div className="input-wrapper">
                 <input
                     type="text"
                     value={texto}
                     onChange={handleChange}
                     onKeyDown={handleKeyDown}
                     placeholder="Escribe un mensaje..."
-                    className="input-message w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:border-blue-500 transition-colors"
-                    disabled={!idChat} // Deshabilitar si no hay chat seleccionado
+                    className="input-message"
+                    disabled={!idChat}
                 />
-                
-                {/* Botón de enviar opcional (mejora UX en móvil) */}
-                <button 
+
+                <button
                     onClick={handleEnviar}
-                    disabled={!texto.trim()}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-blue-600 hover:text-blue-800 disabled:opacity-50 p-2"
+                    disabled={!texto.trim() || !idChat}
+                    className="btn-enviar"
                 >
                     Enviar
                 </button>

@@ -1,12 +1,20 @@
+import { useAuth } from "@/features/auth/AuthContext";
 import { useEffect, useState } from "react";
+import { FaArchive, FaArrowLeft } from "react-icons/fa";
 
 interface Props {
     onNewContact: () => void;
     onNewGroup: () => void;
-    obtenerCoincidencias: (busqueda: string | undefined) => void
+    obtenerCoincidencias: (busqueda: string | undefined) => void;
+    viendoArchivados: boolean;
+    setViendoArchivados: (valor: boolean) => void;
 }
 
-export const SidebarHeader = ({ onNewContact, onNewGroup, obtenerCoincidencias }: Props) => {
+export const SidebarHeader = ({ onNewContact, onNewGroup, obtenerCoincidencias, viendoArchivados, setViendoArchivados }: Props) => {
+    const { logout } = useAuth();
+    const handleLogout = () => {
+        logout();
+    };
     const [busqueda, setBusqueda] = useState("");
     const handleText = (e: React.ChangeEvent<HTMLInputElement>) => {
         const nuevoValor = e.target.value; // Capturamos el valor real en el momento
@@ -30,22 +38,42 @@ export const SidebarHeader = ({ onNewContact, onNewGroup, obtenerCoincidencias }
 
     return (
         <div className="sidebar-header">
-            {/* LADO IZQUIERDO: Barra */}
-            <input type="text"
-                value={busqueda}
-                onChange={handleText}
-                placeholder="Buscar..." />
+            {viendoArchivados ? (
+                // VISTA: ARCHIVADOS
+                <>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                        <button onClick={() => setViendoArchivados(false)} className="icon-btn" title="Volver a Chats">
+                            <FaArrowLeft />
+                        </button>
+                        <h2 className="header-title" style={{ margin: 0 }}>Archivados</h2>
+                    </div>
+                </>
+            ) : (
+                <>
 
-            {/* LADO DERECHO: Botones agrupados */}
-            <div className="header-actions">
-                <button onClick={onNewContact} title="Nuevo Contacto" className="icon-btn">
-                    👤+
-                </button>
-                <button onClick={onNewGroup} title="Nuevo Grupo" className="icon-btn">
-                    👥+
-                </button>
-            </div>
+                    <input type="text"
+                        value={busqueda}
+                        onChange={handleText}
+                        placeholder="Buscar..." />
+
+                    <button onClick={() => setViendoArchivados(true)} className="icon-btn" title="Ver Archivados">
+                        <FaArchive />
+                    </button>
+
+
+                    <div className="header-actions">
+                        <button onClick={onNewContact} title="Nuevo Contacto" className="icon-btn">
+                            👤+
+                        </button>
+                        <button onClick={onNewGroup} title="Nuevo Grupo" className="icon-btn">
+                            👥+
+                        </button>
+                        <button onClick={handleLogout} className="logout-btn">
+                            Salir
+                        </button>
+                    </div>
+                </>
+            )}
         </div>
-
     );
 };

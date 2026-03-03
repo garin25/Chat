@@ -35,12 +35,6 @@ public class ControladorChat {
         return ResponseEntity.ok(servicioChat.getSidebarChats(miId));
     }
 
-    /*@GetMapping("/all")
-    public ResponseEntity<List<MensajeDTO>> getMensajesParaElNum(@UsuarioAutenticado Usuario yo) {
-        Long miId = yo.getId();
-        return ResponseEntity.ok(servicioChat.getMensajesParaElNum(miId));
-    }*/
-
     @GetMapping("/{chatId}/messages")
     public ResponseEntity<Page<MensajeDTO>> getMensajesPorChat(@UsuarioAutenticado Usuario yo,
                                                                @PathVariable("chatId") Long chatId,
@@ -128,5 +122,15 @@ public class ControladorChat {
         );
 
         return ResponseEntity.ok(paginaFalsa);
+    }
+
+    @PostMapping("/favorito/{chatId}")
+    public ResponseEntity<?> toggleChatFavorito(@PathVariable Long chatId ,@UsuarioAutenticado Usuario yo) {
+        return ResponseEntity.ok(servicioChat.toggleChatFavorito(chatId,yo.getId()));
+    }
+
+    @PostMapping("/archivar/{chatId}")
+    public ResponseEntity<?> toggleChatArchivado(@PathVariable Long chatId ,@UsuarioAutenticado Usuario yo) {
+        return ResponseEntity.ok(servicioChat.toggleChatArchivado(chatId,yo.getId()));
     }
 }

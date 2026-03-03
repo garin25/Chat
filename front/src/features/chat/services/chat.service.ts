@@ -19,7 +19,7 @@ export const ChatService = {
         return response.data;
     },
 
-    marcarComoLeidos: async (chatId: number| null) => {
+    marcarComoLeidos: async (chatId: number | null) => {
         const response = await apiInstance.post(`/api/chats/${chatId}/leido`);
         return response.data;
     },
@@ -52,9 +52,20 @@ export const ChatService = {
         return res.data;
     },
 
-    obtenerContextoMensaje : async (chatId: number, mensajeId: number) => {
-    // Ajustá la ruta según cómo esté configurado tu axios
-    const response = await apiInstance.get(`/api/chats/${chatId}/messages/${mensajeId}/contexto`);
-    return response.data; // Retornamos el JSON tal cual
-}
+    obtenerContextoMensaje: async (chatId: number, mensajeId: number) => {
+        // Ajustá la ruta según cómo esté configurado tu axios
+        const response = await apiInstance.get(`/api/chats/${chatId}/messages/${mensajeId}/contexto`);
+        return response.data; // Retornamos el JSON tal cual
+    },
+
+    toggleFavorito: async (chatId: number|null) => {
+        const response = await apiInstance.post(`/api/chats/favorito/${chatId}`);
+        return response.data; // Retornamos el JSON tal cual
+    },
+
+     toggleArchivado: async (chatId: number|null) => {
+        const response = await apiInstance.post(`/api/chats/archivar/${chatId}`);
+        return response.data; // Retornamos el JSON tal cual
+    }
+
 };

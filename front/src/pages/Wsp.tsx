@@ -11,7 +11,9 @@ import { ModalNewContact } from "@/features/groups/components/ModalNewContact";
 import { ModalNewGroup } from "@/features/groups/components/ModalNewGroup";
 import { ChatService } from '@/features/chat/services/chat.service';
 import { Busqueda } from "@/features/chat/components/Busqueda";
+import { Filtros } from "@/features/chat/components/Filtros";
 
+  export type TipoFiltro = 'todos' | 'no_leidos' | 'favoritos' | 'grupos';
 export const Wsp = () => {
   const { user } = useAuth();
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
@@ -24,7 +26,10 @@ export const Wsp = () => {
 
   const [enBusqueda, setEnBusqueda] = useState<boolean>(false);
   const [coincidencias, setCoincidencias] = useState<any | null>(null);
-  const [cargandoCoincidencias, setCargandoCoincidencias] = useState(false); //Spinne
+  const [cargandoCoincidencias, setCargandoCoincidencias] = useState(false); //Spinner
+
+  const [filtroActivo, setFiltroActivo] = useState<TipoFiltro>('todos');
+  const [viendoArchivados, setViendoArchivados] = useState(false);
 
   const {
     listaDeContactos,
@@ -97,15 +102,23 @@ export const Wsp = () => {
           onNewContact={() => setIsOpenModalContact(true)}
           onNewGroup={() => setIsOpenModalGroup(true)}
           obtenerCoincidencias={obtenerCoincidencias}
+          viendoArchivados={viendoArchivados}
+          setViendoArchivados={setViendoArchivados}
         />
+        {/* SOLO MOSTRAMOS LOS FILTROS SI NO ESTAMOS VIENDO ARCHIVADOS, porque ahí no aplican */}
+        {!viendoArchivados && ( <Filtros filtroActivo={filtroActivo} setFiltroActivo={setFiltroActivo}/>)}
+       
         <div className="sidebar-content-wrapper">
+         
           <ListaDeContactos
             creandoGrupo={isCreandoGrupo}
             seleccionados={seleccionados}
             toggleSeleccion={toggleSeleccion}
             listaDeContactos={listaDeContactos}
             seleccionarChat={seleccionarChat}
-          />
+            filtroActivo={filtroActivo}
+            viendoArchivados={viendoArchivados}
+          /> 
           {enBusqueda && 
           <div className="search-results-overlay">
              <Busqueda coincidencias={coincidencias} cargando={cargandoCoincidencias} seleccionarChat={seleccionarChat}/>

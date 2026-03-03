@@ -1,4 +1,5 @@
 export interface TypeContacto {
+    esArchivado: unknown;
     usuario_id: number | null; // Puede ser null si es un grupo
     nombre: string;
     avatar_url: string;
@@ -10,5 +11,7 @@ export interface TypeContacto {
     ultimo_mensaje_sender_id:number;
     ultimo_mensaje_estado:string;
     ultimo_mensaje_fecha?: string;
+    ultimo_mensaje_sender_name?: string;
+    esFavorito: boolean;
 }
 

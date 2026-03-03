@@ -57,9 +57,6 @@ public class ServicioChatImpl implements ServicioChat {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Obtiene la info de UN solo chat (para el Header al buscar)
-     */
     @Override
     public ChatSidebarDTO getChatHeaderInfo(Long chatId, Long miId) {
         Chat chat = repositorioChat.findById(chatId)
@@ -68,15 +65,6 @@ public class ServicioChatImpl implements ServicioChat {
         Map<Long, String> mapaDeAlias = obtenerMapaDeAlias(miId);
         return mapearChatADTO(chat, miId, mapaDeAlias);
     }
-
-    @Override
-    public List<MensajeDTO> getMensajesParaElNum(Long miId) {
-        List<Mensaje> mensajes = repositorioChat.getMensajesParaElNum(miId);
-
-        // Convertimos la lista de Entidades a DTOs
-        return mensajeMapper.toDtoList(mensajes);
-    }
-
     @Override
     @CacheEvict(value = "sidebar", allEntries = true)
     public Mensaje enviarAlChat(Long miId, Long chatId, String contenido) {
@@ -236,18 +224,8 @@ public class ServicioChatImpl implements ServicioChat {
         return mensajesActualizados;
     }
 
-   /* @Override
-    public List<MensajeDTO> getMensajesPorChat(Long miId, Long chatId) throws RecursoNoEncontradoException {
-        boolean esParticipante = repositorioParticipante.existsByChatIdAndUsuarioId(chatId, miId);
-        if (!esParticipante) {
-            throw new RecursoNoEncontradoException("El usuario no participa en ese chat");
-        }
-        List<Mensaje> mensajes = repositorioMensaje.findAllByChatIdOrderBySentAtAsc(chatId);
-        return mensajeMapper.toDtoList(mensajes);
-    }*/
-
     @Override
-    public Page<MensajeDTO> getMensajesPorChat(Long miId, Long chatId,int page, int size) throws RecursoNoEncontradoException {
+    public Page<MensajeDTO> getMensajesPorChat(Long miId, Long chatId, int page, int size) throws RecursoNoEncontradoException {
         boolean esParticipante = repositorioParticipante.existsByChatIdAndUsuarioId(chatId, miId);
         if (!esParticipante) {
             throw new RecursoNoEncontradoException("El usuario no participa en ese chat");
@@ -265,7 +243,7 @@ public class ServicioChatImpl implements ServicioChat {
             dto.setSentAt(mensaje.getSentAt());
             dto.setChatId(chatId);
             dto.setEstado(mensaje.getEstado());
-            dto.setSender(new MensajeDTO.SenderDTO(mensaje.getSender().getId(),mensaje.getSender().getNombre(),mensaje.getSender().getAvatarUrl()));
+            dto.setSender(new MensajeDTO.SenderDTO(mensaje.getSender().getId(), mensaje.getSender().getNombre(), mensaje.getSender().getAvatarUrl()));
 
             return dto;
         });
@@ -373,8 +351,21 @@ public class ServicioChatImpl implements ServicioChat {
         dto.setUltimoMensaje(chat.getUltimoMensajeContenido());
         dto.setUltimoMensajeSenderId(chat.getUltimoMensajeSenderId());
         dto.setUltimoMensajeEstado(String.valueOf(chat.getUltimoMensajeEstado()));
-        // Agregá aquí la fecha si ya la tenés en la entidad
-        // dto.setUltimoMensajeFecha(chat.getUltimoMensajeFecha());
+        // 1. Buscamos al participante que corresponde al usuario actual
+        Participante miParticipante = chat.getParticipantes().stream()
+                .filter(p -> p.getUsuario().getId().equals(miId)) // Comparamos con el ID del usuario
+                .findFirst() // Sacamos el primero que coincida
+                .orElse(null); // Si por algún motivo raro no está, devuelve null para que no explote
+
+// 2. Si lo encontramos, seteamos los valores en el DTO
+        if (miParticipante != null) {
+            dto.setEsFavorito(miParticipante.getEsFavorito());
+            dto.setEsArchivado(miParticipante.getEsArchivado());
+        } else {
+            // Valores por defecto por si acaso
+            dto.setEsFavorito(false);
+            dto.setEsArchivado(false);
+        }
 
         boolean esGrupo = (chat.getNombre() != null && !chat.getNombre().isEmpty())
                 || chat.getParticipantes().size() > 2;
@@ -383,6 +374,8 @@ public class ServicioChatImpl implements ServicioChat {
             dto.setTipo("group");
             dto.setNombre(chat.getNombre());
             dto.setAvatarUrl(chat.getAvatarUrl());
+            dto.setUltimoMensajeSenderName(mapaDeAlias.get(chat.getUltimoMensajeSenderId()));
+
         } else {
             dto.setTipo("private");
             Usuario otroUsuario = chat.getParticipantes().stream()
@@ -413,6 +406,7 @@ public class ServicioChatImpl implements ServicioChat {
                         (existente, reemplazo) -> existente
                 ));
     }
+
     @Transactional(readOnly = true)
     public List<MensajeDTO> obtenerContextoDeMensaje(Long chatId, Long mensajeId) {
         // 1. Buscamos el mensaje objetivo asegurándonos de que pertenezca a este chat
@@ -441,5 +435,43 @@ public class ServicioChatImpl implements ServicioChat {
         return mensajeMapper.toDtoList(contextoCompleto);
 
 
+    }
+
+    @Override
+    @CacheEvict(value = "sidebar", allEntries = true)
+    public Participante toggleChatFavorito(Long chatId,Long miId) {
+        Chat chat = repositorioChat.findById(chatId)
+                .orElseThrow(() -> new RuntimeException("Chat no encontrado"));
+
+        Participante miParticipante = chat.getParticipantes().stream()
+                .filter(p -> p.getUsuario().getId().equals(miId)) // Comparamos con el ID del usuario
+                .findFirst() // Sacamos el primero que coincida
+                .orElse(null); // Si por algún motivo raro no está, devuelve null para que no explote
+
+        if(miParticipante == null) {
+            throw new RuntimeException("Participante no encontrado");
+        }
+        miParticipante.setEsFavorito(!miParticipante.getEsFavorito());
+
+        return repositorioParticipante.save(miParticipante);
+    }
+
+    @Override
+    @CacheEvict(value = "sidebar", allEntries = true)
+    public Participante toggleChatArchivado(Long chatId, Long miId) {
+        Chat chat = repositorioChat.findById(chatId)
+                .orElseThrow(() -> new RuntimeException("Chat no encontrado"));
+
+        Participante miParticipante = chat.getParticipantes().stream()
+                .filter(p -> p.getUsuario().getId().equals(miId)) // Comparamos con el ID del usuario
+                .findFirst() // Sacamos el primero que coincida
+                .orElse(null); // Si por algún motivo raro no está, devuelve null para que no explote
+
+        if(miParticipante == null) {
+            throw new RuntimeException("Participante no encontrado");
+        }
+        miParticipante.setEsArchivado(!miParticipante.getEsArchivado());
+
+        return repositorioParticipante.save(miParticipante);
     }
 }
