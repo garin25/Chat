@@ -3,7 +3,6 @@ import ThemeContext from './ThemeContext';
 import { useState } from 'react';
 import ThemedComponent from './components/ThemedComponent/ThemedComponent';
 import { ErrorBoundary } from 'react-error-boundary';
-import Navbar from './components/Navbar/Navbar';
 import { AuthProvider } from './features/auth/AuthContext';
 import ErrorFallback from './components/ui/ErrorFallback';
 import LoginWsp from './pages/LoginWsp';

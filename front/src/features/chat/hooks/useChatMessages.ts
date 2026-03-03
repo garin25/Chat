@@ -144,7 +144,7 @@ export const useChatMessages = (
             }
         },
 
-        onSuccess: (mensajeRealGuardado, variables, context) => {
+        onSuccess: (mensajeRealGuardado, _variables, context) => {
 
             // 1. Usamos EXACTAMENTE la misma llave que usó el onMutate
             const queryKey = context?.queryKeyMensajes || ['mensajes', Number(idChatSeleccionado)];

@@ -46,7 +46,7 @@ export const ListaDeContactos = ({ listaDeContactos, seleccionarChat, creandoGru
     },
 
     // 3. LA RED DE SEGURIDAD (Si Spring Boot tira error 500 o se cae el internet)
-    onError: (err, chatId, context) => {
+    onError: (_err, _chatId, context) => {
       console.error("Falló al cambiar favorito, revirtiendo visualmente...");
       // Restauramos la foto vieja (el corazón vuelve a su estado original)
       if (context?.sidebarAnterior) {
@@ -74,7 +74,7 @@ export const ListaDeContactos = ({ listaDeContactos, seleccionarChat, creandoGru
 
       return { sidebarAnterior };
     },
-    onError: (err, chatId, context) => {
+    onError: (_err, _chatId, context) => {
       console.error("Falló al archivar el chat , revirtiendo visualmente...");
       if (context?.sidebarAnterior) {
         queryClient.setQueryData(['chats', 'sidebar'], context.sidebarAnterior);
