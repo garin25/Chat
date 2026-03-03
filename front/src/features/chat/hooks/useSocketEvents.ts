@@ -141,6 +141,7 @@ export const useSocketEvents = (
                 if (!oldData || !oldData.pages) return oldData;
 
                 let encontroElMensaje = false;
+                console.log("Encontro el mensaje a actualizar?", encontroElMensaje);
 
                 const nuevasPaginas = oldData.pages.map(page => ({
                     ...page,

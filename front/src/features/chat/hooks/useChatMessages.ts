@@ -153,6 +153,7 @@ export const useChatMessages = (
                 if (!oldData || !oldData.pages) return oldData;
 
                 let loEncontre = false;
+                console.log("Lo encontro?", loEncontre);
 
                 // 2. Mapeamos TODAS las páginas, no solo la 0
                 const nuevasPaginas = oldData.pages.map((page: any) => {
