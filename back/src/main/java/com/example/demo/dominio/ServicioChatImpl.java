@@ -230,12 +230,14 @@ public class ServicioChatImpl implements ServicioChat {
         if (!esParticipante) {
             throw new RecursoNoEncontradoException("El usuario no participa en ese chat");
         }
+
         Pageable paginador = PageRequest.of(page, size);
 
-        // Buscamos en la BD usando el paginador
+        // Traemos TODOS mis contactos a la memoria RAM una sola vez para no hacer la peticion al back
+        Map<Long, String> mapaDeAlias = obtenerMapaDeAlias(miId);
+
         Page<Mensaje> paginaMensajes = repositorioMensaje.findMensajesPorChatPaginados(chatId, paginador);
 
-        // Convertir un Page<Mensaje> a Page<MensajeDTO> usando map()
         return paginaMensajes.map(mensaje -> {
             MensajeDTO dto = new MensajeDTO();
             dto.setId(mensaje.getId());
@@ -243,7 +245,24 @@ public class ServicioChatImpl implements ServicioChat {
             dto.setSentAt(mensaje.getSentAt());
             dto.setChatId(chatId);
             dto.setEstado(mensaje.getEstado());
-            dto.setSender(new MensajeDTO.SenderDTO(mensaje.getSender().getId(), mensaje.getSender().getNombre(), mensaje.getSender().getAvatarUrl()));
+
+            Long senderId = mensaje.getSender().getId();
+            String nombreAMostrar;
+
+            if (senderId.equals(miId)) {
+                // Si el mensaje lo mandé yo, no busco en la agenda.
+                nombreAMostrar = "Yo";
+            } else {
+                // Si lo mandó el otro: Busco en mi mapa en memoria.
+                // Si no existe (no lo tengo agendado), uso getOrDefault para mostrar su número de teléfono.
+                nombreAMostrar = mapaDeAlias.getOrDefault(senderId, mensaje.getSender().getTelefono());
+            }
+
+            dto.setSender(new MensajeDTO.SenderDTO(
+                    senderId,
+                    nombreAMostrar,
+                    mensaje.getSender().getAvatarUrl()
+            ));
 
             return dto;
         });
@@ -385,9 +404,14 @@ public class ServicioChatImpl implements ServicioChat {
                     .orElse(null);
 
             if (otroUsuario != null) {
-                // Aplicar Alias o Nombre Real
-                String nombreAMostrar = mapaDeAlias.getOrDefault(otroUsuario.getId(), otroUsuario.getNombre());
-                dto.setNombre(nombreAMostrar);
+                String aliasGuardado = mapaDeAlias.get(otroUsuario.getId());
+                if (aliasGuardado != null) {
+                    // CASO A: Lo tengo agendado. Muestro el nombre con el que lo guardé.
+                    dto.setNombre(aliasGuardado);
+                } else {
+                    // CASO B: NO lo tengo agendado. Muestro su número de teléfono.
+                    dto.setNombre(otroUsuario.getTelefono());
+                }
                 dto.setAvatarUrl(otroUsuario.getAvatarUrl());
                 dto.setUsuarioId(String.valueOf(otroUsuario.getId()));
                 dto.setEstado(otroUsuario.getEstado());

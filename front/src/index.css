@@ -747,3 +747,10 @@ input::placeholder {
 .archive-btn:hover {
     color: #00a884; /* Se pinta de verde WA al pasar el mouse */
 }
+
+.loading{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}

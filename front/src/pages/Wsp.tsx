@@ -12,6 +12,7 @@ import { ModalNewGroup } from "@/features/groups/components/ModalNewGroup";
 import { ChatService } from '@/features/chat/services/chat.service';
 import { Busqueda } from "@/features/chat/components/Busqueda";
 import { Filtros } from "@/features/chat/components/Filtros";
+import { Spinner } from "@/components/ui/Spinner";
 
   export type TipoFiltro = 'todos' | 'no_leidos' | 'favoritos' | 'grupos';
 export const Wsp = () => {
@@ -68,7 +69,7 @@ export const Wsp = () => {
   const sidebarClass = idChatSeleccionado ? "sidebar mobile-hidden" : "sidebar";
   const chatClass = idChatSeleccionado ? "chat-container" : "chat-container mobile-hidden";
 
-  if (!isConnected) return <div className="loading">Conectando al servidor...</div>;
+  if (!isConnected) return <div className="loading"><Spinner/></div>;
 
   const obtenerCoincidencias = async (busqueda: string | undefined) => {
     // Si el usuario borró todo, salimos del "modo búsqueda"
