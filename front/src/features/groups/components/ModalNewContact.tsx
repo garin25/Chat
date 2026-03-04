@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { ChatService } from "@/features/chat/services/chat.service";
+import { useAgregarContacto } from "../hooks/useAgregarContacto";
 
 const schema = z.object({
     nombre: z.string().min(2, "El nombre debe tener al menos 2 caracteres"),
@@ -18,18 +18,15 @@ export type NewContactFormValues = z.infer<typeof schema>;
 interface ModalProps {
     isOpen: boolean,
     onClose: () => void,
-    onContactAdded: () => void
 }
 
 
-const chatService = ChatService;
 
-export const ModalNewContact = ({ isOpen, onClose, onContactAdded }: ModalProps) => {
+export const ModalNewContact = ({ isOpen, onClose}: ModalProps) => {
 
-    if (!isOpen) return null;
+    const { mutate: agregarContacto } = useAgregarContacto();
     const [serverError, setServerError] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-
 
     const {
         register,
@@ -40,25 +37,23 @@ export const ModalNewContact = ({ isOpen, onClose, onContactAdded }: ModalProps)
     });
 
     const onSubmit = async (data: NewContactFormValues) => {
+        setIsSubmitting(true);
+        agregarContacto(data, {
+            onSuccess: () => {
+                setIsSubmitting(false);
+                onClose();
+                alert("Contacto agregado correctamente")
+            },
+            onError: (error: any) => {
+                setIsSubmitting(false);
+                console.error("Error de red:", error);
+                setServerError(error.message);
+            }
+        });
 
-        try {
-            setIsSubmitting(true);
-            chatService.agendarContacto(data);
-            onContactAdded();
-            setIsSubmitting(false);
-            onClose();
-            alert("Contacto agregado correctamente")
-        } catch (error: any) {
-            setIsSubmitting(false);
-            console.error("Error de red:", error);
-            //alert("No se pudo conectar con el servidor");
-            setServerError(error.message);
-        } finally {
-            setIsSubmitting(false);
-
-        }
     };
 
+    if (!isOpen) return null;
 
 
     return (

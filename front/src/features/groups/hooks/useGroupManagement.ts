@@ -1,7 +1,8 @@
 import { ChatService } from '@/features/chat/services/chat.service';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 
-export const useGroupManagement = (onGroupCreated: () => void) => {
+export const useGroupManagement = () => {
     const [isCreandoGrupo, setIsCreandoGrupo] = useState(false);
     const [seleccionados, setSeleccionados] = useState<number[]>([]);
     const [isOpenModalGroup, setIsOpenModalGroup] = useState(false);
@@ -23,23 +24,45 @@ export const useGroupManagement = (onGroupCreated: () => void) => {
         setSeleccionados([]);
     };
 
-    const confirmarCrearGrupo = async () => {
-        // Aquí podrías usar un input real en vez de localStorage
-        const nombreGrupo = localStorage.getItem("nombreGrupo"); 
-        console.log({nombreGrupo});
+    const useCrearGrupo = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (datosGrupo: { nombreGrupo: string; integrantes: number[] }) => 
+            ChatService.crearGrupo(datosGrupo),
         
-        if (nombreGrupo && seleccionados.length > 0) {
-            try {
-                await ChatService.crearGrupo({ nombreGrupo, integrantes: seleccionados });
-                setIsCreandoGrupo(false);
-                setIsOpenModalGroup(false);
-                setSeleccionados([]);
-                onGroupCreated(); // Refrescamos la lista
-            } catch (error) {
-                console.error("Error al crear grupo", error);
-            }
+        onSuccess: () => {
+            console.log("Grupo creado, invalidando sidebar...");
+            queryClient.invalidateQueries({ queryKey: ['chats', 'sidebar'] });
         }
-    };
+    });
+};
+
+const { mutate: crearGrupo} = useCrearGrupo();
+
+const confirmarCrearGrupo = () => {
+    const nombreGrupo = localStorage.getItem("nombreGrupo"); 
+    
+    if (nombreGrupo && seleccionados.length > 0) {
+        crearGrupo(
+            { nombreGrupo, integrantes: seleccionados }, 
+            {
+                // Solo cerramos los modales y limpiamos si el backend respondió OK
+                onSuccess: () => {
+                    setIsCreandoGrupo(false);
+                    setIsOpenModalGroup(false);
+                    setSeleccionados([]);
+                    localStorage.removeItem("nombreGrupo"); 
+                    
+                },
+                onError: (error) => {
+                    console.error("Error al crear el grupo:", error);
+                    alert("Hubo un problema al crear el grupo");
+                }
+            }
+        );
+    }
+};
 
     return {
         isCreandoGrupo,

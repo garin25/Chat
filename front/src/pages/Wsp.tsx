@@ -38,7 +38,6 @@ export const Wsp = () => {
     headerContactSelected,
     seleccionarChat,
     enviarMensaje,
-    recargarContactos,
     mensajeIdParaEnfocar,
     setMensajeIdParaEnfocar,
     viendoHistorial,
@@ -56,7 +55,7 @@ export const Wsp = () => {
     toggleSeleccion,
     confirmarCrearGrupo,
     cancelarCreacion
-  } = useGroupManagement(recargarContactos);
+  } = useGroupManagement();
 
   // Función para el botón "Volver"
   const handleVolver = () => {
@@ -161,7 +160,6 @@ export const Wsp = () => {
       <ModalNewContact
         isOpen={isOpenModalContact}
         onClose={() => setIsOpenModalContact(false)}
-        onContactAdded={recargarContactos}
       />
 
       <ModalNewGroup

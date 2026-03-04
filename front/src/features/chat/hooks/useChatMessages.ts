@@ -30,7 +30,6 @@ export const useChatMessages = (
     // A. Contactos (Sidebar)
     const {
         data: listaDeContactos = [], // Valor por defecto [] si es undefined
-        refetch: recargarContactos
     } = useSidebarContacts();
 
 
@@ -228,7 +227,6 @@ export const useChatMessages = (
         headerContactSelected,  // Calculado (Memo)
         seleccionarChat,        // Función Wrapper
         enviarMensaje,          // Función Wrapper de Mutación
-        recargarContactos,      // Función de React Query
         mensajeIdParaEnfocar,   // Estado Local
         setMensajeIdParaEnfocar, // Setter Local
         viendoHistorial, 
