@@ -369,23 +369,6 @@ body {
     color: #8696a0; /* Se vuelve gris si no hay texto */
     cursor: default;
 }
-/* Por defecto (Desktop), el botón volver no se ve */
-.btn-back {
-    color: white;
-    display: none;
-    background: none;
-    border: none;
-    font-size: 1.5rem;
-    cursor: pointer;
-    margin-right: 10px;
-}
-
-/* En Mobile, lo mostramos */
-@media (max-width: 768px) {
-    .btn-back {
-        display: block;
-    }
-}
 
 /*NOTIFICACIONES*/
 /* Badge contenedor */
@@ -753,4 +736,114 @@ input::placeholder {
   justify-content: center;
   align-items: center;
   height: 100vh;
+}
+/* =========================================
+   HEADER DEL CHAT ACTIVO
+   ========================================= */
+/* El contenedor principal con nueva clase y menos espesor */
+.chat-header-content {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    height: 59px; /* Altura exacta de WhatsApp Web */
+    padding: 0 16px; /* Le sacamos el padding arriba/abajo para que el flex lo centre perfecto */
+    background-color: #202c33; 
+    border-bottom: 1px solid #222d34; 
+    box-sizing: border-box;
+}
+
+.btn-back {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: #aebac1;
+    cursor: pointer;
+    padding: 8px 12px 8px 0;
+    margin-right: 8px;
+    display: none; 
+}
+
+/* El Avatar un poco más chico (36px en vez de 40px) para que entre cómodo */
+.chat-header-content img {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-right: 15px;
+    cursor: pointer; 
+}
+
+/* Contenedor de Textos */
+.chat-header-content .info {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    flex-grow: 1; 
+    min-width: 0; 
+}
+
+/* Nombre del contacto */
+.chat-header-content .info > span:first-child {
+    font-size: 16px;
+    color: #e9edef; 
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 21px;
+}
+
+/* Contenedor del Subtítulo */
+.header-subtitle {
+    font-size: 13px;
+    color: #8696a0; 
+    line-height: 20px;
+    min-height: 20px; 
+}
+
+/* El botón de agendar (Lo hacemos un pelín más compacto también) */
+.btn-agendar-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background-color: #00a884; 
+    color: #111b21; 
+    border: none;
+    border-radius: 20px;
+    padding: 5px 12px; /* Un poco menos de padding vertical */
+    font-size: 13px; /* Letra un punto más chica */
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    margin-left: auto; 
+}
+
+.btn-agendar-header:hover {
+    background-color: #008f6f;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .btn-back.mobile-only {
+        display: block; 
+    }
+
+    .chat-header-content {
+        padding: 0 12px;
+    }
+
+    .chat-header-content img {
+        width: 34px; /* Aún más chico en celulares */
+        height: 34px;
+        margin-right: 12px;
+    }
+
+    .chat-header-content .info > span:first-child {
+        font-size: 15px;
+    }
+
+    .btn-agendar-header {
+        padding: 4px 10px;
+        font-size: 12px;
+    }
 }

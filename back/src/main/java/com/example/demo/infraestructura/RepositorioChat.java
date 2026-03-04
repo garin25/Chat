@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository //por defecto con @Query se usa JPQL NO ES LO MISMO Q SQL NATIVO OJO , OJO con los comentarios tambien
 public interface RepositorioChat extends JpaRepository<Chat, Long> {
@@ -28,4 +29,9 @@ public interface RepositorioChat extends JpaRepository<Chat, Long> {
             "ORDER BY m.sentAt ASC") // Ojo: Asegurate de cómo se llama la variable en Java (sentAt o fechaEnvio)
     List<Mensaje> getMensajesParaElNum(@Param("miId") Long miId);
 
+    @Query("SELECT c FROM Chat c JOIN c.participantes p1 JOIN c.participantes p2 " +
+            "WHERE c.tipo = 'private' " +
+            "AND p1.usuario.id = :usuario1Id " +
+            "AND p2.usuario.id = :usuario2Id")
+    Optional<Chat> findChatPrivadoExistente(@Param("usuario1Id") Long usuario1Id, @Param("usuario2Id") Long usuario2Id);
 }

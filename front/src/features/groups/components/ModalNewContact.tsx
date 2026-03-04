@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -18,23 +18,41 @@ export type NewContactFormValues = z.infer<typeof schema>;
 interface ModalProps {
     isOpen: boolean,
     onClose: () => void,
+    telefonoInicial?: string; // 👈 Opcional, porque desde el Sidebar lo abrimos vacío
 }
 
 
 
-export const ModalNewContact = ({ isOpen, onClose}: ModalProps) => {
+export const ModalNewContact = ({ isOpen, onClose, telefonoInicial }: ModalProps) => {
 
     const { mutate: agregarContacto } = useAgregarContacto();
     const [serverError, setServerError] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
-    const {
+   const {
         register,
         handleSubmit,
+        reset, // 👈 1. Extraemos 'reset' de useForm
         formState: { errors }
     } = useForm<NewContactFormValues>({
-        resolver: zodResolver(schema)
+        resolver: zodResolver(schema),
+        defaultValues: {
+            telefono: telefonoInicial || "",
+            nombre: ""
+        }
     });
+
+    // Escuchamos cuando el modal se abre o cambia el teléfono
+    useEffect(() => {
+        if (isOpen) {
+            // Cuando se abre, forzamos al formulario a resetearse con los datos nuevos
+            reset({
+                telefono: telefonoInicial || "",
+                nombre: "" // Limpiamos el nombre por si había quedado algo escrito de antes
+            });
+            setServerError(null); // De paso, limpiamos errores viejos
+        }
+    }, [isOpen, telefonoInicial, reset]);
 
     const onSubmit = async (data: NewContactFormValues) => {
         setIsSubmitting(true);

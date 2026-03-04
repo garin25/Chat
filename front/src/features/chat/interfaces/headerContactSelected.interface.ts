@@ -4,4 +4,5 @@ export interface HeaderContactSelected{
     estado:string|null|undefined,
     usuario_id ?: number | null,
     tipo:string
+    esContacto?:boolean
 }

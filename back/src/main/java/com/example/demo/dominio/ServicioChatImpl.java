@@ -89,50 +89,58 @@ public class ServicioChatImpl implements ServicioChat {
     @CacheEvict(value = "sidebar", allEntries = true)
     public Contacto agendarContacto(Usuario usuarioTitular, NewContactDTO contactoDTO) {
 
-        // 1. Validar que el usuario a agendar exista
+        // 1, 2 y 3. (Tus validaciones iniciales quedan EXACTAMENTE igual)
         Usuario usuarioContacto = repositorioLogin.findByTelefono(contactoDTO.getTelefono())
                 .orElseThrow(() -> new RecursoNoEncontradoException("No se encontró el usuario con ese teléfono"));
 
-        // 2. Validar auto-agendamiento
         if (usuarioTitular.getId().equals(usuarioContacto.getId())) {
             throw new OperacionInvalidaException("No puedes agendarte a ti mismo");
         }
-
-        // 3. Validar si ya lo tengo en mi agenda
-        // Usamos el método estándar sugerido (Opción A)
         boolean yaExiste = repositorioContacto.existsByTitularAndContactoUsuario(usuarioTitular, usuarioContacto);
         if (yaExiste) {
             throw new RecursoRepetidoException("Este usuario ya está en tus contactos");
         }
 
-        // 4. Guardar el CONTACTO (Agenda)
+        // 4. Guardar el CONTACTO (La Agenda) - Esto siempre se hace
         Contacto nuevoContacto = new Contacto();
         nuevoContacto.setTitular(usuarioTitular);
         nuevoContacto.setContactoUsuario(usuarioContacto);
-        nuevoContacto.setAlias(contactoDTO.getNombre()); // Nombre con el que yo lo quiero ver
+        nuevoContacto.setAlias(contactoDTO.getNombre());
         Contacto contactoGuardado = repositorioContacto.save(nuevoContacto);
 
-        // 5. LÓGICA DEL CHAT: ¿Ya tienen un chat privado previo?
-        // (Omitir este paso si siempre quieres crear uno nuevo, pero lo ideal es reutilizar)
-        // Aquí simplifico creando uno nuevo como tenías, pero ojo con los duplicados.
+        // 5. LÓGICA DEL CHAT: Buscar si ya charlaron antes
+        Optional<Chat> chatPrevio = repositorioChat.findChatPrivadoExistente(usuarioTitular.getId(), usuarioContacto.getId());
 
-        Chat nuevoChat = new Chat();
-        nuevoChat.setTipo("private");
-        nuevoChat.setCreatedAt(LocalDateTime.now());
-        Chat chatGuardado = repositorioChat.save(nuevoChat);
+        // 6. Si NO hay chat previo, recién ahí lo creamos
+        if (chatPrevio.isEmpty()) {
+            Chat nuevoChat = new Chat();
+            nuevoChat.setTipo("private");
+            nuevoChat.setCreatedAt(LocalDateTime.now());
+            Chat chatGuardado = repositorioChat.save(nuevoChat);
 
-        // 6. Crear los Participantes
-        Participante p1 = new Participante();
-        p1.setUsuario(usuarioContacto);
-        p1.setChat(chatGuardado);
+            // Crear los Participantes
+            Participante p1 = new Participante();
+            p1.setUsuario(usuarioContacto);
+            p1.setChat(chatGuardado);
+            p1.setEsFavorito(false);
+            p1.setEsArchivado(false);
 
-        Participante p2 = new Participante(); // Yo
-        p2.setUsuario(usuarioTitular);
-        p2.setChat(chatGuardado);
+            Participante p2 = new Participante();
+            p2.setUsuario(usuarioTitular);
+            p2.setChat(chatGuardado);
+            p2.setEsFavorito(false);
+            p2.setEsArchivado(false);
 
-        // 7. Guardar AMBOS participantes
-        repositorioParticipante.save(p1);
-        repositorioParticipante.save(p2);
+            // Guardar AMBOS participantes
+            repositorioParticipante.save(p1);
+            repositorioParticipante.save(p2);
+
+            // (Acá podrías meter la lógica del WebSocket para avisarle al otro que creaste el chat,
+            //  como charlamos antes, porque es un chat totalmente nuevo).
+        }
+
+        // Si chatPrevio.isPresent() es true, no hace falta hacer nada con los chats.
+        // Ya estaban conectados en la base de datos, solo querías ponerle un "Alias".
 
         return contactoGuardado;
     }
@@ -408,9 +416,11 @@ public class ServicioChatImpl implements ServicioChat {
                 if (aliasGuardado != null) {
                     // CASO A: Lo tengo agendado. Muestro el nombre con el que lo guardé.
                     dto.setNombre(aliasGuardado);
+                    dto.setEsContacto(true);
                 } else {
                     // CASO B: NO lo tengo agendado. Muestro su número de teléfono.
                     dto.setNombre(otroUsuario.getTelefono());
+                    dto.setEsContacto(false);
                 }
                 dto.setAvatarUrl(otroUsuario.getAvatarUrl());
                 dto.setUsuarioId(String.valueOf(otroUsuario.getId()));

@@ -40,6 +40,7 @@ public class ChatSidebarDTO implements Serializable {
 
     private Boolean esFavorito=false;
     private Boolean esArchivado=false;
+    private Boolean esContacto=false;
 
 
 }

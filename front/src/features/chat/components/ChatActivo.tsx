@@ -3,13 +3,15 @@ import type { HeaderContactSelected } from "../interfaces/headerContactSelected.
 import type { Message } from "../interfaces/message.interface";
 import { InputMessage } from "./InputMessage"
 import { Mensaje } from "./Mensaje"
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useEscribiendo, usePresencia } from "../hooks";
 import { StatusEnLinea } from "./StatusEnLinea";
 import { useInfiniteQuery, useQueryClient, type InfiniteData } from "@tanstack/react-query";
 import { ChatService } from "../services/chat.service";
 import type { TypeContacto } from "../interfaces/contacto.interface";
 import type { SpringPage } from "../interfaces/page.interface";
+import { MdPersonAdd } from "react-icons/md";
+import { ModalNewContact } from "@/features/groups/components/ModalNewContact";
 
 interface ChatProps {
     idChatSeleccionado: number | null,
@@ -25,7 +27,7 @@ interface ChatProps {
     setEnBusqueda: (enBusqueda: boolean) => void;
 }
 export const ChatActivo = ({ idChatSeleccionado, enviarMensaje, headerContactSelected, onBack, clientRef, isConnected, mensajeIdParaEnfocar, setMensajeIdParaEnfocar, viendoHistorial, volverAlPresente, setEnBusqueda }: ChatProps) => {
-    
+    const [isOpenModalContact, setIsOpenModalContact] = useState(false);
     const queryClient = useQueryClient();
     const { user } = useAuth();
     const topObserverRef = useRef(null);
@@ -260,10 +262,17 @@ export const ChatActivo = ({ idChatSeleccionado, enviarMensaje, headerContactSel
         }, 200);
     };
     return (
-
         <div className="chat-window">
+
+            <ModalNewContact 
+                isOpen={isOpenModalContact} 
+                onClose={() => setIsOpenModalContact(false)} 
+                telefonoInicial={headerContactSelected?.nombre} // Le pasamos el número para que no lo tenga que tipear
+            />
+
+
             {headerContactSelected != null && (<div className="contact-item">
-                <div className="contact-content" style={{ display: 'flex', alignItems: 'center', flex: 1 }}>
+                <div className="chat-header-content" style={{ display: 'flex', alignItems: 'center', flex: 1 }}>
 
                     <button className="btn-back mobile-only" onClick={onBack}>
                         ⬅
@@ -274,7 +283,7 @@ export const ChatActivo = ({ idChatSeleccionado, enviarMensaje, headerContactSel
                         alt="Avatar"
                     />
                     <div className="info">
-                        <span>{headerContactSelected?.nombre}</span>
+                        <span>{headerContactSelected?.nombre}</span>    
                         <br />
                         <span className="header-subtitle">
                             {/* CASO 1: CHAT PRIVADO */}
@@ -298,6 +307,15 @@ export const ChatActivo = ({ idChatSeleccionado, enviarMensaje, headerContactSel
 
                         </span>
                     </div>
+                     {headerContactSelected.tipo !== 'group' && !headerContactSelected.esContacto && (
+                        <button 
+                            className="btn-agendar-header" 
+                            onClick={() => setIsOpenModalContact(true)}
+                        >
+                            <MdPersonAdd size={16} />
+                            Agendar
+                        </button>
+                    )}
                 </div>
             </div>)}
 
@@ -365,6 +383,8 @@ export const ChatActivo = ({ idChatSeleccionado, enviarMensaje, headerContactSel
                 />
             </div>
         </div>
+
+        
 
     )
 }
