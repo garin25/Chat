@@ -3,10 +3,19 @@ name: Deploy a Producción 🚀
 on:
   push:
     branches: [ "master" ] 
+    # Extra pro: Esto hace que solo se ejecute si tocás algo del backend
+    paths:
+      - 'back/**'
+      - '.github/workflows/**'
 
 jobs:
   build-and-push:
     runs-on: ubuntu-latest 
+
+    # Le decimos que por defecto ejecute los comandos de consola adentro de /back
+    defaults:
+      run:
+        working-directory: ./back
 
     steps:
     - name: 📥 Descargar el código
@@ -30,11 +39,14 @@ jobs:
     - name: 🚀 Build y Push de la imagen Docker
       uses: docker/build-push-action@v4
       with:
-        context: .
+        # ¡Súper importante! Le decimos a Docker que el Dockerfile está en /back
+        context: ./back 
         push: true
         tags: |
           garin25/mi-backend:latest
           garin25/mi-backend:${{ github.sha }}
 
     - name: 🔄 Avisar a Render para que actualice
+      # Al sacar esto de 'defaults', le decimos que lo corra donde sea, total es solo hacer una llamada web
+      working-directory: .
       run: curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK }}
