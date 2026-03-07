@@ -1,5 +1,5 @@
 import { useAuth } from "@/features/auth/AuthContext";
-import { useEffect, useState } from "react";
+import { useEffect} from "react";
 import { FaArchive, FaArrowLeft } from "react-icons/fa";
 
 interface Props {
@@ -8,14 +8,16 @@ interface Props {
     obtenerCoincidencias: (busqueda: string | undefined) => void;
     viendoArchivados: boolean;
     setViendoArchivados: (valor: boolean) => void;
+    busqueda: string;
+    setBusqueda: (valor: string) => void;
 }
 
-export const SidebarHeader = ({ onNewContact, onNewGroup, obtenerCoincidencias, viendoArchivados, setViendoArchivados }: Props) => {
+export const SidebarHeader = ({ onNewContact, onNewGroup, obtenerCoincidencias, viendoArchivados, setViendoArchivados, busqueda, setBusqueda }: Props) => {
     const { logout } = useAuth();
     const handleLogout = () => {
         logout();
     };
-    const [busqueda, setBusqueda] = useState("");
+    //const [busqueda, setBusqueda] = useState("");
     const handleText = (e: React.ChangeEvent<HTMLInputElement>) => {
         const nuevoValor = e.target.value; // Capturamos el valor real en el momento
         setBusqueda(nuevoValor);

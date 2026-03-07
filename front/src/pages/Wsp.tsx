@@ -13,6 +13,7 @@ import { ChatService } from '@/features/chat/services/chat.service';
 import { Busqueda } from "@/features/chat/components/Busqueda";
 import { Filtros } from "@/features/chat/components/Filtros";
 import { Spinner } from "@/components/ui/Spinner";
+import type { BusquedaDTO } from "@/features/chat/interfaces/busqueda.interface";
 
   export type TipoFiltro = 'todos' | 'no_leidos' | 'favoritos' | 'grupos';
 export const Wsp = () => {
@@ -26,11 +27,12 @@ export const Wsp = () => {
   const { clientRef, isConnected } = useChatConnection(`${API_URL}/ws`, token);
 
   const [enBusqueda, setEnBusqueda] = useState<boolean>(false);
-  const [coincidencias, setCoincidencias] = useState<any | null>(null);
+  const [coincidencias, setCoincidencias] = useState<BusquedaDTO[] | null>(null);
   const [cargandoCoincidencias, setCargandoCoincidencias] = useState(false); //Spinner
 
   const [filtroActivo, setFiltroActivo] = useState<TipoFiltro>('todos');
   const [viendoArchivados, setViendoArchivados] = useState(false);
+  const [busqueda, setBusqueda] = useState("");
 
   const {
     listaDeContactos,
@@ -104,6 +106,8 @@ export const Wsp = () => {
           obtenerCoincidencias={obtenerCoincidencias}
           viendoArchivados={viendoArchivados}
           setViendoArchivados={setViendoArchivados}
+          busqueda={busqueda}
+          setBusqueda={setBusqueda}
         />
         {/* SOLO MOSTRAMOS LOS FILTROS SI NO ESTAMOS VIENDO ARCHIVADOS, porque ahí no aplican */}
         {!viendoArchivados && ( <Filtros filtroActivo={filtroActivo} setFiltroActivo={setFiltroActivo}/>)}
@@ -121,7 +125,7 @@ export const Wsp = () => {
           /> 
           {enBusqueda && 
           <div className="search-results-overlay">
-             <Busqueda coincidencias={coincidencias} cargando={cargandoCoincidencias} seleccionarChat={seleccionarChat}/>
+             <Busqueda coincidencias={coincidencias} cargando={cargandoCoincidencias} seleccionarChat={seleccionarChat} terminoBusqueda={busqueda}/>
           </div>}
         </div>
 

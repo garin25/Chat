@@ -847,3 +847,9 @@ input::placeholder {
         font-size: 12px;
     }
 }
+
+/* Estilo para la coincidencia de búsqueda */
+.texto-resaltado {
+    color: #00a884; 
+    font-weight: 600; 
+}

@@ -35,9 +35,9 @@ public interface RepositorioMensaje  extends JpaRepository<Mensaje,Long> {
 
     @Query("SELECT m FROM Mensaje m " +
             "JOIN m.chat c " +
-            "WHERE c.id IN (SELECT p.chat.id FROM Participante p WHERE p.usuario.id = :miId)" +
-            "AND m.contenido  LIKE :busqueda ")
-    List<Mensaje> buscarCoincidencias(@Param("miId") Long miId, @Param("busqueda")String data);
+            "WHERE c.id IN (SELECT p.chat.id FROM Participante p WHERE p.usuario.id = :miId) " +
+            "AND LOWER(m.contenido) LIKE LOWER(CONCAT('%', :busqueda, '%'))")
+    List<Mensaje> buscarCoincidencias(@Param("miId") Long miId, @Param("busqueda") String data);
 
     @Query("SELECT m FROM Mensaje m WHERE m.chat.id = :chatId ORDER BY m.sentAt DESC")
     Page<Mensaje> findMensajesPorChatPaginados(@Param("chatId") Long chatId, Pageable pageable);
