@@ -1,3 +1,4 @@
+
 /* =========================================
    1. VARIABLES Y RESET (Tema Oscuro)
    ========================================= */
@@ -25,12 +26,15 @@
   padding: 0;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
-
+html, body, #root {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    overflow: hidden !important; /* El !important es solo para asegurar que nada lo pise */
+}
 body {
   background-color: var(--bg-app);
   color: var(--text-primary);
-  height: 100vh;
-  overflow: hidden; /* Evita scroll en toda la pagina */
 }
 
 /* Scrollbar Oscuro Estilo WhatsApp */
