@@ -282,8 +282,9 @@ export const ChatActivo = ({ idChatSeleccionado, enviarMensaje, headerContactSel
             />
 
 
-            {headerContactSelected != null && (<div className="contact-item">
-                <div className="chat-header-content" style={{ display: 'flex', alignItems: 'center', flex: 1 }}>
+            {headerContactSelected != null && (
+                <div className="contact-item" id="header-contact">
+
 
                     <button className="btn-back mobile-only" onClick={onBack}>
                         ⬅
@@ -327,8 +328,8 @@ export const ChatActivo = ({ idChatSeleccionado, enviarMensaje, headerContactSel
                             Agendar
                         </button>
                     )}
-                </div>
-            </div>)}
+
+                </div>)}
 
             {/* Opcional pero recomendado: Un indicador visual */}
             {isFetchingNextPage && (
@@ -378,7 +379,7 @@ export const ChatActivo = ({ idChatSeleccionado, enviarMensaje, headerContactSel
                     onClick={saltarAlPresente}
                     style={{
                         position: 'absolute',
-                        bottom: '80px', // Ajustá esto para que quede arriba del input
+                        bottom: '35px', // Ajustá esto para que quede arriba del input
                         right: '20px',
                         padding: '10px 15px',
                         backgroundColor: '#25D366',
@@ -394,15 +395,13 @@ export const ChatActivo = ({ idChatSeleccionado, enviarMensaje, headerContactSel
                 </button>
             )}
 
-            <div className="chat-input-area">
-                <InputMessage
-                    idChat={idChatSeleccionado}
-                    onSend={enviarMensaje}
-                    clientRef={clientRef}
-                    mensajeAResponder={mensajeAResponder}
-                    setMensajeAResponder={setMensajeAResponder}
-                />
-            </div>
+            <InputMessage
+                idChat={idChatSeleccionado}
+                onSend={enviarMensaje}
+                clientRef={clientRef}
+                mensajeAResponder={mensajeAResponder}
+                setMensajeAResponder={setMensajeAResponder}
+            />
         </div>
 
 
