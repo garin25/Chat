@@ -36,9 +36,10 @@ export const ChatService = {
         return response.data;
     },
 
-    enviarMensaje: async (chatId: number, contenido: string) => {
+    enviarMensaje: async (chatId: number, contenido: string, replyToId: number | null = null) => {
         const response = await apiInstance.post(`/api/chats/${chatId}/messages`, {
-            contenido
+            contenido: contenido,
+            replyToId: replyToId
         });
         return response.data;
     },
@@ -58,12 +59,12 @@ export const ChatService = {
         return response.data; // Retornamos el JSON tal cual
     },
 
-    toggleFavorito: async (chatId: number|null) => {
+    toggleFavorito: async (chatId: number | null) => {
         const response = await apiInstance.post(`/api/chats/favorito/${chatId}`);
         return response.data; // Retornamos el JSON tal cual
     },
 
-     toggleArchivado: async (chatId: number|null) => {
+    toggleArchivado: async (chatId: number | null) => {
         const response = await apiInstance.post(`/api/chats/archivar/${chatId}`);
         return response.data; // Retornamos el JSON tal cual
     }

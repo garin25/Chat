@@ -67,13 +67,21 @@ public class ServicioChatImpl implements ServicioChat {
     }
     @Override
     @CacheEvict(value = "sidebar", allEntries = true)
-    public Mensaje enviarAlChat(Long miId, Long chatId, String contenido) {
+    public Mensaje enviarAlChat(Long miId, Long chatId, String contenido,Long replyToId) {
         Chat chat = repositorioChat.findById(chatId).orElseThrow();
         Optional<Usuario> usuario = repositorioLogin.findById(miId);
         Mensaje mensaje = new Mensaje();
         mensaje.setSender(usuario.get());
         mensaje.setContenido(contenido);
         mensaje.setChat(chat);
+
+        if (replyToId != null) {
+            Mensaje mensajeRespondido = repositorioMensaje.findById(replyToId)
+                    .orElseThrow(() -> new RecursoNoEncontradoException("El mensaje original no existe"));
+
+            // Le seteamos la entidad entera (Hibernate guarda solo el ID en la tabla)
+            mensaje.setMensajeRespondido(mensajeRespondido);
+        }
 
         //Actualizar Chat (Desnormalización)
         chat.setUltimoMensajeContenido(contenido);
@@ -272,6 +280,20 @@ public class ServicioChatImpl implements ServicioChat {
                     mensaje.getSender().getAvatarUrl()
             ));
 
+            if (mensaje.getMensajeRespondido() != null) {
+                RespuestaSnippetDTO snippet = new RespuestaSnippetDTO();
+                snippet.setId(mensaje.getMensajeRespondido().getId());
+                snippet.setContenido(mensaje.getMensajeRespondido().getContenido());
+
+                // Reciclamos tu lógica del mapaDeAlias para ponerle el nombre correcto!
+                Long idOriginal = mensaje.getMensajeRespondido().getSender().getId();
+                String nombreOriginal = idOriginal.equals(miId) ? "Tú" :
+                        mapaDeAlias.getOrDefault(idOriginal, mensaje.getMensajeRespondido().getSender().getTelefono());
+
+                snippet.setSenderNombre(nombreOriginal);
+
+                dto.setRespondidoA(snippet);
+            }
             return dto;
         });
     }
@@ -306,6 +328,20 @@ public class ServicioChatImpl implements ServicioChat {
         dto.setChatId(mensajeGuardado.getChat().getId());
         dto.setSenderNombre(mensajeGuardado.getSender().getNombre());
         dto.setSenderId(mensajeGuardado.getSender().getId()); // Agregué ID por si el front lo necesita
+
+
+        if (mensajeGuardado.getMensajeRespondido() != null) {
+            Mensaje original = mensajeGuardado.getMensajeRespondido();
+
+            RespuestaSnippetDTO snippet = new RespuestaSnippetDTO();
+            snippet.setId(original.getId());
+            snippet.setContenido(original.getContenido());
+
+            // Obtenemos el nombre del sender original directamente de la BD
+            snippet.setSenderNombre(original.getSender().getNombre());
+
+            dto.setRespondidoA(snippet);
+        }
 
         Chat chat = mensajeGuardado.getChat();
         List<Participante> participantes = chat.getParticipantes();

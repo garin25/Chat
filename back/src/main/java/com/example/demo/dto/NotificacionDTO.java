@@ -15,5 +15,6 @@ public class NotificacionDTO {
     private String senderNombre;
     private Long senderId;
     private String sentAt;
+    private RespuestaSnippetDTO respondidoA;
 
 }

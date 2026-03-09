@@ -4,6 +4,12 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSidebarContacts } from './useSidebarContact';
 import { ChatService } from '../services/chat.service';
 import { inyectarMensajeEnCache } from './utils';
+import type { MensajeRespondido } from '../interfaces/mensajeRespondido.interface';
+
+interface EnviarMensajePayload {
+    texto: string;
+    respondidoA: MensajeRespondido | null;
+}
 
 export const useChatMessages = (
     clientRef: any,
@@ -88,50 +94,56 @@ export const useChatMessages = (
         );
     };
 
-    // B. Enviar Mensaje (Mutación)
-    const enviarMensajeMutation = useMutation({
-        mutationFn: (texto: string) => {
-            if (!idChatSeleccionado) throw new Error("No hay chat seleccionado");
-            return ChatService.enviarMensaje(idChatSeleccionado, texto);
-        },
+   
 
-        onMutate: async (textoNuevo: string) => {
-            // 1. ARREGLO DE LLAVE (Y OJO: ahora esto devuelve un objeto InfiniteData, no un array [])
-            const queryKeyMensajes = ['mensajes', idChatSeleccionado];
+const enviarMensajeMutation = useMutation({
+    // 1. AHORA RECIBIMOS UN OBJETO
+    mutationFn: (payload: EnviarMensajePayload) => {
+        if (!idChatSeleccionado) throw new Error("No hay chat seleccionado");
+        
+        // 2. Le pasamos el texto Y el ID del mensaje al que estamos respondiendo (si existe) al Service
+        return ChatService.enviarMensaje(idChatSeleccionado, payload.texto, payload.respondidoA?.id || null);
+    },
 
-            // Cancelamos peticiones en vuelo para que no pisen nuestro update optimista
-            await queryClient.cancelQueries({ queryKey: queryKeyMensajes });
+    // 3. EL ONMUTATE TAMBIÉN RECIBE EL OBJETO
+    onMutate: async (payload: EnviarMensajePayload) => {
+        const { texto: textoNuevo, respondidoA } = payload; // Extraemos las variables
+        
+        const queryKeyMensajes = ['mensajes', idChatSeleccionado];
 
-            const previousMessages = queryClient.getQueryData(queryKeyMensajes);
+        // Cancelamos peticiones en vuelo...
+        await queryClient.cancelQueries({ queryKey: queryKeyMensajes });
+        const previousMessages = queryClient.getQueryData(queryKeyMensajes);
 
-            const tempId = -(Date.now());
-            const usuarioIdNormalizado = Number(user?.id) || 0;
-            const ahora = new Date().toISOString();
+        const tempId = -(Date.now());
+        const usuarioIdNormalizado = Number(user?.id) || 0;
+        const ahora = new Date().toISOString();
 
-            const mensajeOptimista = {
-                id: tempId,
-                contenido: textoNuevo,
-                sentAt: ahora,
-                chatId: idChatSeleccionado,
-                estado: "ENVIANDO",
-                sender: { id: usuarioIdNormalizado, nombre: user?.nombre || "Yo" }
-            };
+        // 4. ¡LA MAGIA OPTIMISTA! Agregamos el objeto respondidoA al mensaje falso
+        const mensajeOptimista = {
+            id: tempId,
+            contenido: textoNuevo,
+            sentAt: ahora,
+            chatId: idChatSeleccionado,
+            estado: "ENVIANDO",
+            sender: { id: usuarioIdNormalizado, nombre: user?.nombre || "Yo" },
+            respondidoA: respondidoA // <--- ACÁ ESTÁ LA CLAVE PARA LA UI
+        };
 
-            // 2. Usamos tu nueva función mágica (esto está perfecto)
-            inyectarMensajeEnCache(queryClient, idChatSeleccionado, mensajeOptimista);
+        // Inyectamos...
+        inyectarMensajeEnCache(queryClient, idChatSeleccionado, mensajeOptimista);
 
-            // 3. OJO CON LA LLAVE DEL SIDEBAR: 
-            // Asegurate de que ['chats', 'sidebar'] sea EXACTAMENTE la misma llave que usás adentro de tu hook useSidebarContacts
-            queryClient.setQueryData(['chats', 'sidebar'], (old: any[] = []) =>
-                old.map(c =>
-                    c.chat_id === idChatSeleccionado
-                        ? { ...c, ultimo_mensaje: textoNuevo, ultimo_mensaje_fecha: ahora, ultimo_mensaje_estado: 'ENVIANDO' }
-                        : c
-                )
-            );
+        // Sidebar update (Queda igual, mostramos el texto del mensaje como último mensaje)
+        queryClient.setQueryData(['chats', 'sidebar'], (old: any[] = []) =>
+            old.map(c =>
+                c.chat_id === idChatSeleccionado
+                    ? { ...c, ultimo_mensaje: textoNuevo, ultimo_mensaje_fecha: ahora, ultimo_mensaje_estado: 'ENVIANDO' }
+                    : c
+            )
+        );
 
-            return { previousMessages, tempId, usuarioIdNormalizado, queryKeyMensajes };
-        },
+        return { previousMessages, tempId, usuarioIdNormalizado, queryKeyMensajes };
+    },
 
         onError: (_, __, context) => {
             // 4. ARREGLO DE LLAVE AL RESTAURAR
@@ -198,10 +210,14 @@ export const useChatMessages = (
         }
     });
 
-    const enviarMensaje = (texto: any) => {
-        enviarMensajeMutation.mutate(texto);
-    };
+   const enviarMensaje = (texto: string, mensajeRespondidoState: MensajeRespondido | null = null) => {
+    
+    enviarMensajeMutation.mutate({ 
+        texto: texto, 
+        respondidoA: mensajeRespondidoState 
+    });
 
+};
     // --- 5. DERIVADOS (Calculados al vuelo) ---
     // Ya no necesitas un estado para 'headerContactSelected'.
     // Lo calculamos buscando en la lista que ya tenemos en memoria.

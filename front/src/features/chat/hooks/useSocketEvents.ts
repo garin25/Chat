@@ -57,7 +57,8 @@ export const useSocketEvents = (
                 sentAt: payload.sentAt,
                 chatId: payload.chatId,
                 estado: esChatAbierto ? 'LEIDO' : 'ENTREGADO',
-                sender: { id: senderIdNormalizado, nombre: payload.senderNombre || payload.sender?.nombre || "Usuario" }
+                sender: { id: senderIdNormalizado, nombre: payload.senderNombre || payload.sender?.nombre || "Usuario" },
+                respondidoA: payload.respondidoA || null,
             };
 
             // 👇 LA PRUEBA DE FUEGO PARA EL DIBUJADO EN TIEMPO REAL 👇

@@ -35,6 +35,10 @@ public class Mensaje {
     @Enumerated(EnumType.STRING)
     private EstadoMensaje estado; // Por defecto ENVIADO al guardar
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "reply_to_id")
+    private Mensaje mensajeRespondido;
+
     // Esta anotación ejecuta este método justo antes de hacer el INSERT en la DB
     @PrePersist
     public void prePersist() {

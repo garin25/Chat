@@ -289,12 +289,33 @@ body {
   margin-bottom: 4px;
 }
 
-/* En tu archivo .css */
-.mensaje-resaltado {
-    background-color: #2a3942 !important; /* Un color que resalte */
-    transition: background-color 0.5s ease;
-    border-radius: 8px;
+.mensaje-resaltado::after {
+    content: "";
+    position: absolute;
+    top: -4px; /* Un poquito de margen para que el destello respire */
+    bottom: -4px;
+    left: 0;
+    right: 0;
+    
+    background-color: rgba(255, 255, 255, 0.12); /* Gris clarito */
+    pointer-events: none; /* Fundamental para que no bloquee los clics a tus botones */
+    z-index: 0; /* Lo mandamos al fondo */
+    
+    /* Animamos la opacidad en vez del color (Mejor rendimiento) */
+    animation: fadeOutFlash 2s ease-out forwards;
 }
+
+@keyframes fadeOutFlash {
+    0% { opacity: 1; }
+    100% { opacity: 0; }
+}
+
+/* Nos aseguramos de que tu burbuja real y el botón queden por encima del destello */
+.mensaje-resaltado .mensaje-contenido,
+.mensaje-resaltado .reply-btn {
+    z-index: 1;
+}
+
 /* Contenedor principal del input */
 .chat-input-area {
     padding: 10px 16px;
@@ -853,3 +874,200 @@ input::placeholder {
     color: #00a884; 
     font-weight: 600; 
 }
+
+/* =========================================
+   CAJA DE MENSAJE CITADO (RESPONDIDO)
+   ========================================= */
+.mensaje-respondido-box {
+    /* Fondo transparente que oscurece sutilmente la burbuja madre */
+    background-color: rgba(0, 0, 0, 0.15); 
+    /* La clásica línea de color a la izquierda */
+    border-left: 4px solid #06cf9c; 
+    border-radius: 4px;
+    padding: 6px 10px;
+    margin-bottom: 6px; /* Separación con el texto de mi nuevo mensaje */
+    display: flex;
+    flex-direction: column;
+    cursor: pointer;
+    /* Efecto hover suave para indicar que se puede hacer clic */
+    transition: background-color 0.2s ease;
+
+    /* MAGIA 2: Le dice a la caja que si el texto interior es muy largo, no ensanche la burbuja madre, sino que lo corte */
+    overflow: hidden;
+    min-width: 0;
+}
+
+.mensaje-respondido-box:hover {
+    background-color: rgba(0, 0, 0, 0.25);
+}
+
+.respondido-nombre {
+    color: #06cf9c; /* Mismo color que el borde */
+    font-size: 0.8rem;
+    font-weight: 600;
+    margin-bottom: 3px;
+}
+
+.respondido-texto {
+    color: #e9edef; /* Gris claro de WhatsApp oscuro */
+    font-size: 0.85rem;
+    opacity: 0.8;
+    
+    /* TRUCO: Si el mensaje original era larguísimo, lo cortamos en 1 sola línea con "..." */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+
+/* LA CAJITA DE PREVISUALIZACIÓN */
+.reply-preview-box {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: #2a3942; /* Un tono apenas más claro que el fondo para que resalte */
+    border-left: 4px solid #00a884; /* La clásica línea verde */
+    
+    /* El truco de los bordes: curvos arriba, rectos abajo para "pegarse" al input */
+    border-radius: 8px 8px 0 0; 
+    padding: 10px 16px;
+    
+    /* Le damos un margin-bottom negativo o cero para pegarlo bien al input wrapper */
+    margin-bottom: 0; 
+    border-bottom: 1px solid #202c33; /* Fina línea divisoria */
+    
+    /* Animación suave al aparecer (opcional pero suma mucha UX) */
+    animation: slideUp 0.2s ease-out;
+}
+
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Contenedor de los textos adentro de la cajita */
+.reply-info {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden; /* Fundamental para que el text-overflow funcione */
+    flex: 1; /* Ocupa todo el espacio disponible empujando la cruz a la derecha */
+    margin-right: 15px;
+}
+
+.reply-name {
+    color: #00a884; /* Mismo verde del borde */
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.reply-text {
+    color: #8696a0; /* Gris secundario para no robar protagonismo */
+    font-size: 13px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis; /* Pone los "..." si el mensaje es muy largo */
+}
+
+/* El botón de cancelar la respuesta (la cruz) */
+.btn-close-reply {
+    background: none;
+    border: none;
+    color: #8696a0;
+    font-size: 16px;
+    cursor: pointer;
+    padding: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s ease;
+}
+
+.btn-close-reply:hover {
+    color: #d1d7db; /* Se ilumina un poco al pasar el mouse */
+}
+
+
+
+
+/* 4. EL BOTÓN (Con margen fijo, sin auto) */
+.reply-btn {
+    flex-shrink: 0;
+    margin: 0 8px; /* Separación fija de 8px con la burbuja. ¡Acá no usamos auto! */
+    background: transparent;
+    border: none;
+    color: #8696a0;
+    cursor: pointer;
+    font-size: 1.1rem;
+    opacity: 0.7;
+    transition: opacity 0.2s ease, color 0.2s ease;
+}
+
+.reply-btn:hover {
+    opacity: 1;
+    color: #00a884;
+}
+
+/* EL CONTENEDOR INVISIBLE (Ocupa el 100% del ancho) */
+.mensaje-container {
+    display: flex;
+    align-items: center; /* Esto alinea el botón a la misma altura que la burbuja */
+    width: 100%; /* Fundamental para tener espacio para empujar */
+    margin-bottom: 12px;
+    padding: 0 4%;
+    box-sizing: border-box;
+
+    background-color: transparent !important; 
+    border: none !important;
+    box-shadow: none !important;
+    /* MAGIA NUEVA: Necesario para el destello */
+    position: relative;
+}
+
+.mensaje-container.enviado {
+    flex-direction: row-reverse; /* Da vuelta el HTML para que el botón quede a la izquierda de la burbuja */
+    
+    /* ¡LA MAGIA! En row-reverse, "flex-start" significa PEGAR A LA DERECHA */
+    justify-content: flex-start; 
+}
+
+/* Si es DEL OTRO: Burbuja a la izquierda, botón a la derecha */
+.mensaje-container.recibido {
+    flex-direction: row; /* Orden normal del HTML */
+    
+    /* En row normal, "flex-start" significa PEGAR A LA IZQUIERDA */
+    justify-content: flex-start; 
+}
+
+
+/* LA BURBUJA REAL VISIBLE */
+.mensaje-contenido {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    word-wrap: break-word; 
+    max-width: 75%; /* Frena el crecimiento */
+    width: fit-content; 
+    min-width: 80px; /* Un poco más angosta para mensajes cortos */
+    
+    padding: 6px 10px 8px 10px; 
+    border-radius: 8px; 
+    color: #e9edef; 
+    font-size: 14px; 
+    line-height: 19px; 
+    box-shadow: 0 1px 0.5px rgba(11,20,26,.13); 
+}
+
+/* Colores según de quién es el mensaje */
+.enviado .mensaje-contenido {
+    background-color: #005c4b;
+    border-top-right-radius: 0; 
+}
+
+.recibido .mensaje-contenido {
+    background-color: #202c33;
+    border-top-left-radius: 0; 
+}
+
+

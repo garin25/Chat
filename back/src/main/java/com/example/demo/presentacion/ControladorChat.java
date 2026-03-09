@@ -49,12 +49,13 @@ public class ControladorChat {
     @PostMapping("/{chatId}/messages")
     public ResponseEntity<NotificacionDTO> enviarAlChat( // Retornamos DTO también en HTTP
                                                          @PathVariable("chatId") Long chatId,
-                                                         @RequestBody Map<String, String> payload,
+                                                         @RequestBody EnviarMensajeDTO dto,
                                                          @UsuarioAutenticado Usuario yo
     ) {
-        String contenido = payload.get("contenido");
+        String contenido = dto.getContenido();
+        Long replyToId = dto.getReplyToId();
         Long miId = yo.getId();
-        Mensaje mensajeGuardado = servicioChat.enviarAlChat(miId, chatId, contenido);
+        Mensaje mensajeGuardado = servicioChat.enviarAlChat(miId, chatId, contenido,replyToId);
 
         // DELEGAMOS TODO EL WEBSOCKET AL OTRO MÉTODO
         // Y recuperamos el DTO para devolverlo en el HTTP (opcional pero recomendado)

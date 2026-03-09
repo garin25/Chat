@@ -12,10 +12,11 @@ import type { TypeContacto } from "../interfaces/contacto.interface";
 import type { SpringPage } from "../interfaces/page.interface";
 import { MdPersonAdd } from "react-icons/md";
 import { ModalNewContact } from "@/features/groups/components/ModalNewContact";
+import type { MensajeRespondido } from "../interfaces/mensajeRespondido.interface";
 
 interface ChatProps {
     idChatSeleccionado: number | null,
-    enviarMensaje: (nuevoTexto: string) => void,
+    enviarMensaje: (nuevoTexto: string,mensajeAResponder?: MensajeRespondido | null) => void,
     headerContactSelected: HeaderContactSelected | null,
     onBack: () => void,
     clientRef: React.MutableRefObject<any>,
@@ -28,6 +29,7 @@ interface ChatProps {
 }
 export const ChatActivo = ({ idChatSeleccionado, enviarMensaje, headerContactSelected, onBack, clientRef, isConnected, mensajeIdParaEnfocar, setMensajeIdParaEnfocar, viendoHistorial, volverAlPresente, setEnBusqueda }: ChatProps) => {
     const [isOpenModalContact, setIsOpenModalContact] = useState(false);
+    const [mensajeAResponder, setMensajeAResponder] = useState<MensajeRespondido | null>(null);
     const queryClient = useQueryClient();
     const { user } = useAuth();
     const topObserverRef = useRef(null);
@@ -346,6 +348,8 @@ export const ChatActivo = ({ idChatSeleccionado, enviarMensaje, headerContactSel
                             esMio={soyYo}
                             estado={mensaje.estado}
                             sentAt={mensaje.sentAt}
+                            respondidoA={mensaje.respondidoA}
+                            setMensajeAResponder={setMensajeAResponder} 
                         />
                     )
                 })}
@@ -380,6 +384,8 @@ export const ChatActivo = ({ idChatSeleccionado, enviarMensaje, headerContactSel
                     idChat={idChatSeleccionado}
                     onSend={enviarMensaje}
                     clientRef={clientRef}
+                    mensajeAResponder={mensajeAResponder}
+                    setMensajeAResponder={setMensajeAResponder}
                 />
             </div>
         </div>

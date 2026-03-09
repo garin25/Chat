@@ -6,6 +6,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+
 import java.time.LocalDateTime;
 
 @Data
@@ -20,6 +21,8 @@ public class MensajeDTO {
     @Enumerated(EnumType.STRING)
     private EstadoMensaje estado;
     private SenderDTO sender; // Clase interna pequeña
+
+    private RespuestaSnippetDTO respondidoA; // Puede ser null
 
     @Data
     @AllArgsConstructor
