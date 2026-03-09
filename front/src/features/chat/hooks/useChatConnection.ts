@@ -26,7 +26,7 @@ export const useChatConnection = (url: string, token: string) => {
             client.connect(
                 { 'Authorization': `Bearer ${token}` },
                 (frame: any) => {
-                    console.log('✅ Conectado exitosamente a STOMP');
+                    console.log('✅ Conectado exitosamente a STOMP' + frame);
                     setIsConnected(true);
                     clientRef.current = client;
                     
