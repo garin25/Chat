@@ -13,10 +13,11 @@ import type { SpringPage } from "../interfaces/page.interface";
 import { MdPersonAdd } from "react-icons/md";
 import { ModalNewContact } from "@/features/groups/components/ModalNewContact";
 import type { MensajeRespondido } from "../interfaces/mensajeRespondido.interface";
+import { MensajeSkeleton } from "./Mensaje/MensajeSkeleton";
 
 interface ChatProps {
     idChatSeleccionado: number | null,
-    enviarMensaje: (nuevoTexto: string,mensajeAResponder?: MensajeRespondido | null) => void,
+    enviarMensaje: (nuevoTexto: string, mensajeAResponder?: MensajeRespondido | null) => void,
     headerContactSelected: HeaderContactSelected | null,
     onBack: () => void,
     clientRef: React.MutableRefObject<any>,
@@ -28,6 +29,13 @@ interface ChatProps {
     setEnBusqueda: (enBusqueda: boolean) => void;
 }
 export const ChatActivo = ({ idChatSeleccionado, enviarMensaje, headerContactSelected, onBack, clientRef, isConnected, mensajeIdParaEnfocar, setMensajeIdParaEnfocar, viendoHistorial, volverAlPresente, setEnBusqueda }: ChatProps) => {
+    //Simulacion para la carga
+    const conversacionFalsa = [
+        { id: 1, esMio: false, lineas: 2 },
+        { id: 2, esMio: true, lineas: 1 },
+        { id: 3, esMio: false, lineas: 3 },
+        { id: 4, esMio: true, lineas: 2 },
+    ];
     const [isOpenModalContact, setIsOpenModalContact] = useState(false);
     const [mensajeAResponder, setMensajeAResponder] = useState<MensajeRespondido | null>(null);
     const queryClient = useQueryClient();
@@ -45,6 +53,7 @@ export const ChatActivo = ({ idChatSeleccionado, enviarMensaje, headerContactSel
     const chatIdNumerico = Number(idChatSeleccionado);
     const {
         data,
+        isLoading,
         fetchNextPage,
         hasNextPage,
         isFetchingNextPage,
@@ -266,9 +275,9 @@ export const ChatActivo = ({ idChatSeleccionado, enviarMensaje, headerContactSel
     return (
         <div className="chat-window">
 
-            <ModalNewContact 
-                isOpen={isOpenModalContact} 
-                onClose={() => setIsOpenModalContact(false)} 
+            <ModalNewContact
+                isOpen={isOpenModalContact}
+                onClose={() => setIsOpenModalContact(false)}
                 telefonoInicial={headerContactSelected?.nombre} // Le pasamos el número para que no lo tenga que tipear
             />
 
@@ -285,7 +294,7 @@ export const ChatActivo = ({ idChatSeleccionado, enviarMensaje, headerContactSel
                         alt="Avatar"
                     />
                     <div className="info">
-                        <span>{headerContactSelected?.nombre}</span>    
+                        <span>{headerContactSelected?.nombre}</span>
                         <br />
                         <span className="header-subtitle">
                             {/* CASO 1: CHAT PRIVADO */}
@@ -309,9 +318,9 @@ export const ChatActivo = ({ idChatSeleccionado, enviarMensaje, headerContactSel
 
                         </span>
                     </div>
-                     {headerContactSelected.tipo !== 'group' && !headerContactSelected.esContacto && (
-                        <button 
-                            className="btn-agendar-header" 
+                    {headerContactSelected.tipo !== 'group' && !headerContactSelected.esContacto && (
+                        <button
+                            className="btn-agendar-header"
                             onClick={() => setIsOpenModalContact(true)}
                         >
                             <MdPersonAdd size={16} />
@@ -331,29 +340,35 @@ export const ChatActivo = ({ idChatSeleccionado, enviarMensaje, headerContactSel
             <div className="message-list" ref={scrollContainerRef}>
                 <div ref={topObserverRef} style={{ height: '10px', width: '100%' }} />
 
-                {mensajesOrdenados?.map(mensaje => {
+                {isLoading ? (
+                    // 1. MIENTRAS CARGA: Mostramos una "charla fantasma" hardcodeada
+                    conversacionFalsa.map((msg) => (
+                        <MensajeSkeleton key={msg.id} esMio={msg.esMio} lineas={msg.lineas} />
+                    ))
+                ) : (
+                    // 2. CUANDO TERMINA: Mostramos tus mensajes reales
+                    mensajesOrdenados?.map(mensaje => {
 
-                    const miIdNormalizado = Number(user?.id) || 0;
-                    const senderIdNormalizado = Number(mensaje.sender?.id) || 0;
+                        const miIdNormalizado = Number(user?.id) || 0;
+                        const senderIdNormalizado = Number(mensaje.sender?.id) || 0;
 
-                    // 2. Quitamos el "!esOptimista". Si los IDs coinciden, SOY YO.
-                    const soyYo = senderIdNormalizado === miIdNormalizado;
+                        const soyYo = senderIdNormalizado === miIdNormalizado;
 
-                    return (
-                        <Mensaje
-                            key={mensaje.id}
-                            id={mensaje.id}
-                            contenido={mensaje.contenido}
-                            nombre={mensaje.sender.nombre || 'Desconocido'}
-                            esMio={soyYo}
-                            estado={mensaje.estado}
-                            sentAt={mensaje.sentAt}
-                            respondidoA={mensaje.respondidoA}
-                            setMensajeAResponder={setMensajeAResponder} 
-                        />
-                    )
-                })}
-                {/* Este div vacío siempre estará al final. React scrolleará hasta aquí. */}
+                        return (
+                            <Mensaje
+                                key={mensaje.id}
+                                id={mensaje.id}
+                                contenido={mensaje.contenido}
+                                nombre={mensaje.sender?.nombre || 'Desconocido'}
+                                esMio={soyYo}
+                                estado={mensaje.estado}
+                                sentAt={mensaje.sentAt}
+                                respondidoA={mensaje.respondidoA}
+                                setMensajeAResponder={setMensajeAResponder}
+                            />
+                        )
+                    })
+                )}
                 <div ref={messagesEndRef} />
             </div>
 
@@ -390,7 +405,7 @@ export const ChatActivo = ({ idChatSeleccionado, enviarMensaje, headerContactSel
             </div>
         </div>
 
-        
+
 
     )
 }

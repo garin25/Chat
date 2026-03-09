@@ -196,3 +196,31 @@
 .mensaje-resaltado .reply-btn {
     z-index: 1;
 }
+
+
+/*SKELETON PARA CARGA*/
+
+/* EL MOTOR DEL SKELETON */
+.skeleton {
+    background: #202c33; /* El color de fondo base (oscuro) */
+    background-image: linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0) 0px,
+        rgba(255, 255, 255, 0.05) 40px, /* Un destello blanco súper sutil */
+        rgba(255, 255, 255, 0) 80px
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite linear;
+}
+
+@keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+
+/* La forma de las líneas de texto */
+.skeleton-text {
+    height: 12px;
+    border-radius: 4px;
+    background-color: rgba(255, 255, 255, 0.1); /* Gris de base antes de que pase el brillo */
+}
