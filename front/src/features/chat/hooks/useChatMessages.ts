@@ -176,12 +176,13 @@ const enviarMensajeMutation = useMutation({
                                 loEncontre = true;
 
                                 // Combinamos el mensaje optimista (que tiene la estructura de UI correcta)
-                                // con los datos reales que nos confirmó la base de datos
+                                // con los datos reales que nos confirmó la base de datos (incluyendo respondidoA)
                                 return {
                                     ...m,
                                     id: mensajeRealGuardado?.id || m.id,
                                     estado: m.estado === "LEIDO" ? "LEIDO" : "ENTREGADO",
-                                    sentAt: mensajeRealGuardado?.sentAt || m.sentAt
+                                    sentAt: mensajeRealGuardado?.sentAt || m.sentAt,
+                                    respondidoA: mensajeRealGuardado?.respondidoA || m.respondidoA || null,
                                 };
                             }
                             return m;

@@ -1,0 +1,198 @@
+/* --- Contenedor Principal del Mensaje (Burbuja + Botón Reply) --- */
+.mensaje-container {
+    display: flex;
+    align-items: center; /* Alinea botón a la misma altura que la burbuja */
+    width: 100%; /* Ocupa todo el ancho disponible */
+    margin-bottom: 12px;
+    padding: 0 4%;
+    box-sizing: border-box;
+    
+    background-color: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    position: relative;
+}
+
+/* --- Mensaje ENVIADO (Mío) --- */
+.mensaje-container.enviado {
+    flex-direction: row-reverse; /* Botón a la izquierda */
+    justify-content: flex-start;
+}
+
+/* --- Mensaje RECIBIDO (Del otro) --- */
+.mensaje-container.recibido {
+    flex-direction: row; /* Orden normal */
+    justify-content: flex-start;
+}
+
+/* --- LA BURBUJA REAL VISIBLE --- */
+.mensaje-contenido {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    word-wrap: break-word;
+    max-width: 75%; /* Frena el crecimiento */
+    width: fit-content;
+    min-width: 80px; /* Un poco más angosta para mensajes cortos */
+    
+    padding: 6px 10px 8px 10px;
+    border-radius: 8px;
+    color: #e9edef;
+    font-size: 14px;
+    line-height: 19px;
+    box-shadow: 0 1px 0.5px rgba(11, 20, 26, 0.13);
+}
+
+/* Colores según de quién es el mensaje */
+.enviado .mensaje-contenido {
+    background-color: #005c4b;
+    border-top-right-radius: 0;
+}
+
+.recibido .mensaje-contenido {
+    background-color: #202c33;
+    border-top-left-radius: 0;
+}
+
+/* --- Texto del Mensaje --- */
+.mensaje-texto {
+    margin: 0;
+    font-size: 14.2px;
+    line-height: 19px;
+    color: #e9edef; /* Blanco suave (no blanco puro para no cansar la vista) */
+    word-wrap: break-word;
+}
+
+/* --- Nombre del Autor (Solo en grupos o recibidos) --- */
+.mensaje-autor {
+    font-size: 12.5px;
+    font-weight: 500;
+    color: #d868db; /* Un color de contraste (o naranja/azul según prefieras) */
+    margin-bottom: 4px;
+    display: block;
+}
+
+/* --- Contenedor de Hora y Ticks --- */
+.mensaje-meta {
+    display: flex;
+    justify-content: flex-end; /* Todo a la derecha */
+    align-items: center;
+    margin-top: 2px;
+    margin-right: -4px; /* Ajuste fino para pegar al borde */
+    margin-bottom: -4px;
+    height: 15px;
+}
+
+/* (Opcional) Si agregas la hora luego */
+.mensaje-hora {
+    font-size: 11px;
+    color: #8696a0; /* Gris claro */
+    margin-right: 4px;
+}
+
+/* --- Los Ticks (Estados) --- */
+.estado-ticks {
+    display: flex;
+    align-items: center;
+    font-size: 16px; /* Tamaño del tick */
+    margin-left: 3px;
+}
+
+/* --- Colores de los Ticks --- */
+.status-icon.gris {
+    color: #8696a0; /* El gris de "Enviado/Entregado" */
+}
+
+.status-icon.azul {
+    color: #53bdeb; /* El celeste neón de "Leído" */
+}
+
+.status-icon.reloj {
+    color: #8696a0;
+    font-size: 12px;
+}
+
+/* =========================================
+   ESTILOS DEL BOTÓN REPLY
+   ========================================= */
+.reply-btn {
+    flex-shrink: 0;
+    margin: 0 8px; /* Separación fija con la burbuja */
+    background: transparent;
+    border: none;
+    color: #8696a0;
+    cursor: pointer;
+    font-size: 1.1rem;
+    opacity: 0.7;
+    transition: opacity 0.2s ease, color 0.2s ease;
+}
+
+.reply-btn:hover {
+    opacity: 1;
+    color: #00a884;
+}
+
+/* =========================================
+   ESTILOS DEL MENSAJE RESPONDIDO
+   ========================================= */
+.mensaje-respondido-box {
+    background-color: rgba(0, 0, 0, 0.15);
+    border-left: 4px solid #06cf9c;
+    border-radius: 4px;
+    padding: 6px 10px;
+    margin-bottom: 6px;
+    display: flex;
+    flex-direction: column;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    overflow: hidden;
+    min-width: 0;
+}
+
+.mensaje-respondido-box:hover {
+    background-color: rgba(0, 0, 0, 0.25);
+}
+
+.respondido-nombre {
+    color: #06cf9c;
+    font-size: 0.8rem;
+    font-weight: 600;
+    margin-bottom: 3px;
+}
+
+.respondido-texto {
+    color: #e9edef;
+    font-size: 0.85rem;
+    opacity: 0.8;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+/* =========================================
+   ANIMACIÓN PARA DESTELLO
+   ========================================= */
+.mensaje-resaltado::after {
+    content: "";
+    position: absolute;
+    top: -4px;
+    bottom: -4px;
+    left: 0;
+    right: 0;
+    background-color: rgba(255, 255, 255, 0.12);
+    pointer-events: none;
+    z-index: 0;
+    animation: fadeOutFlash 2s ease-out forwards;
+}
+
+@keyframes fadeOutFlash {
+    0% { opacity: 1; }
+    100% { opacity: 0; }
+}
+
+/* Asegurar que la burbuja y botón queden sobre el destello */
+.mensaje-resaltado .mensaje-contenido,
+.mensaje-resaltado .reply-btn {
+    z-index: 1;
+}

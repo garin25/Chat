@@ -255,68 +255,6 @@ body {
   scroll-behavior: smooth;
 }
 
-/* Estilos de las Burbujas */
-.mensaje-card {
-  max-width: 65%;
-  padding: 6px 9px;
-  border-radius: 8px;
-  position: relative;
-  font-size: 0.9rem;
-  line-height: 19px;
-  box-shadow: 0 1px 0.5px rgba(0,0,0,0.13);
-  margin-bottom: 2px;
-}
-
-/* Mensaje Recibido (El otro) */
-.message-received {
-  background-color: #202c33; /* Gris oscuro */
-  color: #e9edef;
-  align-self: flex-start; /* A la izquierda */
-  border-radius: 0px 12px 12px 12px; /* Esa puntita característica */
-  padding: 6px 9px;
-  max-width: 65%;
-  margin-bottom: 4px;
-}
-
-/* Mensaje Enviado (Yo) */
-.message-sent {
-  background-color: #005c4b; /* El VERDE oscuro clásico de WP */
-  color: #e9edef;
-  align-self: flex-end; /* A la derecha */
-  border-radius: 12px 0px 12px 12px;
-  padding: 6px 9px;
-  max-width: 65%;
-  margin-bottom: 4px;
-}
-
-.mensaje-resaltado::after {
-    content: "";
-    position: absolute;
-    top: -4px; /* Un poquito de margen para que el destello respire */
-    bottom: -4px;
-    left: 0;
-    right: 0;
-    
-    background-color: rgba(255, 255, 255, 0.12); /* Gris clarito */
-    pointer-events: none; /* Fundamental para que no bloquee los clics a tus botones */
-    z-index: 0; /* Lo mandamos al fondo */
-    
-    /* Animamos la opacidad en vez del color (Mejor rendimiento) */
-    animation: fadeOutFlash 2s ease-out forwards;
-}
-
-@keyframes fadeOutFlash {
-    0% { opacity: 1; }
-    100% { opacity: 0; }
-}
-
-/* Nos aseguramos de que tu burbuja real y el botón queden por encima del destello */
-.mensaje-resaltado .mensaje-contenido,
-.mensaje-resaltado .reply-btn {
-    z-index: 1;
-}
-
-/* Contenedor principal del input */
 .chat-input-area {
     padding: 10px 16px;
     background-color: #202c33; /* Fondo oscuro clásico de WA */
@@ -584,21 +522,21 @@ input::placeholder {
     background-color: #111b21;
     overflow: auto;
 }
+
 .logout-btn {
-  max-height: 50px;
-  background-color: transparent;
-  border: 1px solid #f15c6d; /* Borde rojo suave */
-  padding:6px 16px;
-  color: #f15c6d;
-  border-radius: 20px;
-  cursor: pointer;
-  font-weight: 600;
-  transition: all 0.3s;
+    background-color: transparent;
+    border: 1px solid #f15c6d; /* Borde rojo suave */
+    padding: 6px 16px;
+    color: #f15c6d;
+    border-radius: 20px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s;
 }
 
 .logout-btn:hover {
-  background-color: #f15c6d;
-  color: #111b21;
+    background-color: #f15c6d;
+    color: #111b21;
 }
 
 /* =========================================
@@ -876,101 +814,44 @@ input::placeholder {
 }
 
 /* =========================================
-   CAJA DE MENSAJE CITADO (RESPONDIDO)
+   PREVISUALIZACIÓN DE RESPUESTA (InputMessage)
    ========================================= */
-.mensaje-respondido-box {
-    /* Fondo transparente que oscurece sutilmente la burbuja madre */
-    background-color: rgba(0, 0, 0, 0.15); 
-    /* La clásica línea de color a la izquierda */
-    border-left: 4px solid #06cf9c; 
-    border-radius: 4px;
-    padding: 6px 10px;
-    margin-bottom: 6px; /* Separación con el texto de mi nuevo mensaje */
-    display: flex;
-    flex-direction: column;
-    cursor: pointer;
-    /* Efecto hover suave para indicar que se puede hacer clic */
-    transition: background-color 0.2s ease;
-
-    /* MAGIA 2: Le dice a la caja que si el texto interior es muy largo, no ensanche la burbuja madre, sino que lo corte */
-    overflow: hidden;
-    min-width: 0;
-}
-
-.mensaje-respondido-box:hover {
-    background-color: rgba(0, 0, 0, 0.25);
-}
-
-.respondido-nombre {
-    color: #06cf9c; /* Mismo color que el borde */
-    font-size: 0.8rem;
-    font-weight: 600;
-    margin-bottom: 3px;
-}
-
-.respondido-texto {
-    color: #e9edef; /* Gris claro de WhatsApp oscuro */
-    font-size: 0.85rem;
-    opacity: 0.8;
-    
-    /* TRUCO: Si el mensaje original era larguísimo, lo cortamos en 1 sola línea con "..." */
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 100%;
-}
-
-
-/* LA CAJITA DE PREVISUALIZACIÓN */
 .reply-preview-box {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    background-color: #2a3942; /* Un tono apenas más claro que el fondo para que resalte */
-    border-left: 4px solid #00a884; /* La clásica línea verde */
-    
-    /* El truco de los bordes: curvos arriba, rectos abajo para "pegarse" al input */
-    border-radius: 8px 8px 0 0; 
+    background-color: #2a3942;
+    border-left: 4px solid #00a884;
+    border-radius: 8px 8px 0 0;
     padding: 10px 16px;
-    
-    /* Le damos un margin-bottom negativo o cero para pegarlo bien al input wrapper */
-    margin-bottom: 0; 
-    border-bottom: 1px solid #202c33; /* Fina línea divisoria */
-    
-    /* Animación suave al aparecer (opcional pero suma mucha UX) */
-    animation: slideUp 0.2s ease-out;
+    margin-bottom: 0;
+    border-bottom: 1px solid #202c33;
 }
 
-@keyframes slideUp {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-/* Contenedor de los textos adentro de la cajita */
+/* Estilos del contenedor de info en la previsualización */
 .reply-info {
     display: flex;
     flex-direction: column;
-    overflow: hidden; /* Fundamental para que el text-overflow funcione */
-    flex: 1; /* Ocupa todo el espacio disponible empujando la cruz a la derecha */
+    overflow: hidden;
+    flex: 1;
     margin-right: 15px;
 }
 
 .reply-name {
-    color: #00a884; /* Mismo verde del borde */
+    color: #00a884;
     font-size: 14px;
     font-weight: 600;
     margin-bottom: 4px;
 }
 
 .reply-text {
-    color: #8696a0; /* Gris secundario para no robar protagonismo */
+    color: #8696a0;
     font-size: 13px;
     white-space: nowrap;
     overflow: hidden;
-    text-overflow: ellipsis; /* Pone los "..." si el mensaje es muy largo */
+    text-overflow: ellipsis;
 }
 
-/* El botón de cancelar la respuesta (la cruz) */
 .btn-close-reply {
     background: none;
     border: none;
@@ -985,11 +866,40 @@ input::placeholder {
 }
 
 .btn-close-reply:hover {
-    color: #d1d7db; /* Se ilumina un poco al pasar el mouse */
+    color: #d1d7db;
 }
 
+/* =========================================
+   ESTILOS DE MENSAJE (Consolidados en Mensaje.css)
+   ========================================= */
+/* TODO: .mensaje-container, .mensaje-contenido, .reply-btn, 
+   .mensaje-respondido-box y estilos relacionados están en 
+   src/features/chat/components/Mensaje.css */
 
+@media (max-width: 768px) {
+    .btn-back.mobile-only {
+        display: block; 
+    }
 
+    .chat-header-content {
+        padding: 0 12px;
+    }
+
+    .chat-header-content img {
+        width: 34px; /* Aún más chico en celulares */
+        height: 34px;
+        margin-right: 12px;
+    }
+
+    .chat-header-content .info > span:first-child {
+        font-size: 15px;
+    }
+
+    .btn-agendar-header {
+        padding: 4px 10px;
+        font-size: 12px;
+    }
+}
 
 /* 4. EL BOTÓN (Con margen fijo, sin auto) */
 .reply-btn {
@@ -1024,6 +934,7 @@ input::placeholder {
     /* MAGIA NUEVA: Necesario para el destello */
     position: relative;
 }
+
 
 .mensaje-container.enviado {
     flex-direction: row-reverse; /* Da vuelta el HTML para que el botón quede a la izquierda de la burbuja */

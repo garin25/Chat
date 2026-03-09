@@ -1,4 +1,4 @@
-import type { MensajeRespondido } from '../interfaces/mensajeRespondido.interface';
+import type { MensajeRespondido } from '../../interfaces/mensajeRespondido.interface';
 import { FaReply } from "react-icons/fa";
 import './Mensaje.css';
 

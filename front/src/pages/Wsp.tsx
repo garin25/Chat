@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useChatConnection, useChatMessages } from "@/features/chat/hooks";
+import { useChatConnection, useChatMessages, useBusqueda } from "@/features/chat/hooks";
 import { useGroupManagement } from "@/features/groups/hooks/useGroupManagement";
 import { GroupCreationFooter } from "@/features/groups/components/GroupCreationFooter";
 import { SidebarHeader } from "@/components/layout/SidebarHeader";
@@ -9,11 +9,9 @@ import { ListaDeContactos } from "@/features/chat/components/ListaDeContactos";
 import { ChatActivo } from "@/features/chat/components/ChatActivo";
 import { ModalNewContact } from "@/features/groups/components/ModalNewContact";
 import { ModalNewGroup } from "@/features/groups/components/ModalNewGroup";
-import { ChatService } from '@/features/chat/services/chat.service';
 import { Busqueda } from "@/features/chat/components/Busqueda";
 import { Filtros } from "@/features/chat/components/Filtros";
 import { Spinner } from "@/components/ui/Spinner";
-import type { BusquedaDTO } from "@/features/chat/interfaces/busqueda.interface";
 
   export type TipoFiltro = 'todos' | 'no_leidos' | 'favoritos' | 'grupos';
 export const Wsp = () => {
@@ -25,10 +23,13 @@ export const Wsp = () => {
   const [isOpenModalContact, setIsOpenModalContact] = useState(false);
   // 2. Hooks de Chat (Feature: Chat)
   const { clientRef, isConnected } = useChatConnection(`${API_URL}/ws`, token);
-
-  const [enBusqueda, setEnBusqueda] = useState<boolean>(false);
-  const [coincidencias, setCoincidencias] = useState<BusquedaDTO[] | null>(null);
-  const [cargandoCoincidencias, setCargandoCoincidencias] = useState(false); //Spinner
+  const { 
+    enBusqueda, 
+    setEnBusqueda, 
+    coincidencias, 
+    cargandoCoincidencias, 
+    obtenerCoincidencias 
+  } = useBusqueda();
 
   const [filtroActivo, setFiltroActivo] = useState<TipoFiltro>('todos');
   const [viendoArchivados, setViendoArchivados] = useState(false);
@@ -72,29 +73,6 @@ export const Wsp = () => {
 
   if (!isConnected) return <div className="loading"><Spinner/></div>;
 
-  const obtenerCoincidencias = async (busqueda: string | undefined) => {
-    // Si el usuario borró todo, salimos del "modo búsqueda"
-    if (!busqueda || busqueda.trim() === "") {
-      setEnBusqueda(false);
-      setCoincidencias([]);
-      return;
-    }
-    // Si hay texto, entramos en "modo búsqueda" y NO salimos hasta que borre el input
-    setEnBusqueda(true);
-    setCargandoCoincidencias(true); // Esto es solo para mostrar un spinner si querés
-
-    try {
-      const respuesta = await ChatService.buscar(busqueda);
-      setCoincidencias(respuesta);
-    } catch (error) {
-      console.error("Error:", error);
-    } finally {
-      setCargandoCoincidencias(false); // Terminó la petición, pero seguimos en "modo búsqueda"
-    }
-  }
-
-
- 
   return (
     <div className="app-container">
 

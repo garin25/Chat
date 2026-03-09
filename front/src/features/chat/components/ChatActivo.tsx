@@ -2,7 +2,7 @@ import { useAuth } from "@/features/auth/AuthContext";
 import type { HeaderContactSelected } from "../interfaces/headerContactSelected.interface";
 import type { Message } from "../interfaces/message.interface";
 import { InputMessage } from "./InputMessage"
-import { Mensaje } from "./Mensaje"
+import { Mensaje } from "./Mensaje/Mensaje"
 import { useEffect, useRef, useState } from "react";
 import { useEscribiendo, usePresencia } from "../hooks";
 import { StatusEnLinea } from "./StatusEnLinea";
