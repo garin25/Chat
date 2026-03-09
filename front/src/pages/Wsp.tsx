@@ -12,8 +12,9 @@ import { ModalNewGroup } from "@/features/groups/components/ModalNewGroup";
 import { Busqueda } from "@/features/chat/components/Busqueda";
 import { Filtros } from "@/features/chat/components/Filtros";
 import { Spinner } from "@/components/ui/Spinner";
+import { ListaContactosSkeleton } from "@/features/chat/components/ListaContactosSkeleton";
 
-  export type TipoFiltro = 'todos' | 'no_leidos' | 'favoritos' | 'grupos';
+export type TipoFiltro = 'todos' | 'no_leidos' | 'favoritos' | 'grupos';
 export const Wsp = () => {
   const { user } = useAuth();
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
@@ -23,12 +24,12 @@ export const Wsp = () => {
   const [isOpenModalContact, setIsOpenModalContact] = useState(false);
   // 2. Hooks de Chat (Feature: Chat)
   const { clientRef, isConnected } = useChatConnection(`${API_URL}/ws`, token);
-  const { 
-    enBusqueda, 
-    setEnBusqueda, 
-    coincidencias, 
-    cargandoCoincidencias, 
-    obtenerCoincidencias 
+  const {
+    enBusqueda,
+    setEnBusqueda,
+    coincidencias,
+    cargandoCoincidencias,
+    obtenerCoincidencias
   } = useBusqueda();
 
   const [filtroActivo, setFiltroActivo] = useState<TipoFiltro>('todos');
@@ -37,6 +38,7 @@ export const Wsp = () => {
 
   const {
     listaDeContactos,
+    isLoadingContacts,
     idChatSeleccionado,
     headerContactSelected,
     seleccionarChat,
@@ -46,7 +48,7 @@ export const Wsp = () => {
     viendoHistorial,
     volverAlPresente
   } = useChatMessages(clientRef, isConnected, user);
-   
+
 
   // 3. Hook de Grupos (Feature: Groups)
   const {
@@ -71,7 +73,7 @@ export const Wsp = () => {
   const sidebarClass = idChatSeleccionado ? "sidebar mobile-hidden" : "sidebar";
   const chatClass = idChatSeleccionado ? "chat-container" : "chat-container mobile-hidden";
 
-  if (!isConnected) return <div className="loading"><Spinner/></div>;
+  if (!isConnected) return <div className="loading"><Spinner /></div>;
 
   return (
     <div className="app-container">
@@ -88,23 +90,27 @@ export const Wsp = () => {
           setBusqueda={setBusqueda}
         />
         {/* SOLO MOSTRAMOS LOS FILTROS SI NO ESTAMOS VIENDO ARCHIVADOS, porque ahí no aplican */}
-        {!viendoArchivados && ( <Filtros filtroActivo={filtroActivo} setFiltroActivo={setFiltroActivo}/>)}
-       
+        {!viendoArchivados && (<Filtros filtroActivo={filtroActivo} setFiltroActivo={setFiltroActivo} />)}
+
         <div className="sidebar-content-wrapper">
-         
-          <ListaDeContactos
-            creandoGrupo={isCreandoGrupo}
-            seleccionados={seleccionados}
-            toggleSeleccion={toggleSeleccion}
-            listaDeContactos={listaDeContactos}
-            seleccionarChat={seleccionarChat}
-            filtroActivo={filtroActivo}
-            viendoArchivados={viendoArchivados}
-          /> 
-          {enBusqueda && 
-          <div className="search-results-overlay">
-             <Busqueda coincidencias={coincidencias} cargando={cargandoCoincidencias} seleccionarChat={seleccionarChat} terminoBusqueda={busqueda}/>
-          </div>}
+          {isLoadingContacts ? (
+            <ListaContactosSkeleton />
+          ) : (
+            <ListaDeContactos
+              creandoGrupo={isCreandoGrupo}
+              seleccionados={seleccionados}
+              toggleSeleccion={toggleSeleccion}
+              listaDeContactos={listaDeContactos}
+              seleccionarChat={seleccionarChat}
+              filtroActivo={filtroActivo}
+              viendoArchivados={viendoArchivados}
+            />
+          )}
+
+          {enBusqueda &&
+            <div className="search-results-overlay">
+              <Busqueda coincidencias={coincidencias} cargando={cargandoCoincidencias} seleccionarChat={seleccionarChat} terminoBusqueda={busqueda} />
+            </div>}
         </div>
 
         {/* Renderizado Condicional Limpio */}

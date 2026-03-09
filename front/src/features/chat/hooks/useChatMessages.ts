@@ -36,6 +36,7 @@ export const useChatMessages = (
     // A. Contactos (Sidebar)
     const {
         data: listaDeContactos = [], // Valor por defecto [] si es undefined
+        isLoading:isLoadingContacts
     } = useSidebarContacts();
 
 
@@ -240,6 +241,7 @@ const enviarMensajeMutation = useMutation({
     // --- 6. RETORNO (La misma firma que antes) ---
     return {
         listaDeContactos,       // Viene de React Query
+        isLoadingContacts,
         idChatSeleccionado,     // Estado Local
         headerContactSelected,  // Calculado (Memo)
         seleccionarChat,        // Función Wrapper
