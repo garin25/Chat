@@ -1026,3 +1026,21 @@ input::placeholder {
     margin-top: 4px;
     height: 13px; /* El mensaje es apenitas más bajo que el nombre */
 }
+
+/*Loading de socket*/
+.alerta-conexion {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    background-color: #53bdeb; /* Celeste clásico de aviso */
+    color: #111b21;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    padding: 4px 0;
+    font-size: 13px;
+    font-weight: 500;
+    z-index: 1000; /* Para que quede por encima de los chats */
+}

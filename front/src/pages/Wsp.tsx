@@ -73,10 +73,16 @@ export const Wsp = () => {
   const sidebarClass = idChatSeleccionado ? "sidebar mobile-hidden" : "sidebar";
   const chatClass = idChatSeleccionado ? "chat-container" : "chat-container mobile-hidden";
 
-  if (!isConnected) return <div className="loading"><Spinner /></div>;
 
   return (
     <div className="app-container">
+
+    {!isConnected && (
+                <div className="alerta-conexion">
+                    <Spinner/> 
+                    <span>Conectando a los servidores...</span>
+                </div>
+            )}
 
       {/* --- PANEL IZQUIERDO (SIDEBAR) --- */}
       <div className={sidebarClass}>
