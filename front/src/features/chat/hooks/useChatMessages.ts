@@ -36,7 +36,7 @@ export const useChatMessages = (
     // A. Contactos (Sidebar)
     const {
         data: listaDeContactos = [], // Valor por defecto [] si es undefined
-        isLoading:isLoadingContacts
+        isLoading: isLoadingContacts
     } = useSidebarContacts();
 
 
@@ -59,92 +59,93 @@ export const useChatMessages = (
 
     // A. Seleccionar Chat
     const seleccionarChat = async (chatId: number | null, mensajeId?: number) => {
-      if (chatId === null) {
-        setIdChatSeleccionado(null);
-        setViendoHistorial(false); // Reseteamos
-        return;
-    }
-
-    if (mensajeId) {
-        try {
-            const contexto = await ChatService.obtenerContextoMensaje(chatId, mensajeId);
-            
-            // ¡PISAMOS LA CACHÉ!
-            queryClient.setQueryData(['mensajes', Number(chatId)], {
-                pages: [contexto], 
-                pageParams: [0]
-            });
-
-            setMensajeIdParaEnfocar(mensajeId);
-            setViendoHistorial(true); // 👈 ¡ESTAMOS EN EL PASADO!
-
-        } catch (error) {
-            console.error("Error al cargar el contexto:", error);
-            setViendoHistorial(false);
+       const idNormalizado = chatId ? Number(chatId) : null;
+        if (idNormalizado === null) {
+            setIdChatSeleccionado(null);
+            setViendoHistorial(false); // Reseteamos
+            return;
         }
-    } else {
-        setMensajeIdParaEnfocar(null);
-        setViendoHistorial(false); // 👈 Clic normal en el sidebar = Presente
-    }
+
+        if (mensajeId) {
+            try {
+                const contexto = await ChatService.obtenerContextoMensaje(idNormalizado, mensajeId);
+
+                // ¡PISAMOS LA CACHÉ!
+                queryClient.setQueryData(['mensajes', idNormalizado], {
+                    pages: [contexto],
+                    pageParams: [0]
+                });
+
+                setMensajeIdParaEnfocar(mensajeId);
+                setViendoHistorial(true); // 👈 ¡ESTAMOS EN EL PASADO!
+
+            } catch (error) {
+                console.error("Error al cargar el contexto:", error);
+                setViendoHistorial(false);
+            }
+        } else {
+            setMensajeIdParaEnfocar(null);
+            setViendoHistorial(false); // 👈 Clic normal en el sidebar = Presente
+        }
         // 4. Abrimos el chat (esto dispara el renderizado de ChatActivo.tsx)
-        setIdChatSeleccionado(chatId);
+        setIdChatSeleccionado(idNormalizado);
 
         // 5. Actualizamos el estado de "Leído" en el Sidebar visualmente
         queryClient.setQueryData(['chats', 'sidebar'], (old: any[] = []) =>
-            old.map(c => c.chat_id === chatId ? { ...c, cantidadNoLeidos: 0, ultimo_mensaje_estado: 'LEIDO' } : c)
+            old.map(c => c.chat_id === idNormalizado ? { ...c, cantidadNoLeidos: 0, ultimo_mensaje_estado: 'LEIDO' } : c)
         );
     };
 
-   
 
-const enviarMensajeMutation = useMutation({
-    // 1. AHORA RECIBIMOS UN OBJETO
-    mutationFn: (payload: EnviarMensajePayload) => {
-        if (!idChatSeleccionado) throw new Error("No hay chat seleccionado");
-        
-        // 2. Le pasamos el texto Y el ID del mensaje al que estamos respondiendo (si existe) al Service
-        return ChatService.enviarMensaje(idChatSeleccionado, payload.texto, payload.respondidoA?.id || null);
-    },
 
-    // 3. EL ONMUTATE TAMBIÉN RECIBE EL OBJETO
-    onMutate: async (payload: EnviarMensajePayload) => {
-        const { texto: textoNuevo, respondidoA } = payload; // Extraemos las variables
-        
-        const queryKeyMensajes = ['mensajes', idChatSeleccionado];
+    const enviarMensajeMutation = useMutation({
+        // 1. AHORA RECIBIMOS UN OBJETO
+        mutationFn: (payload: EnviarMensajePayload) => {
+            if (!idChatSeleccionado) throw new Error("No hay chat seleccionado");
 
-        // Cancelamos peticiones en vuelo...
-        await queryClient.cancelQueries({ queryKey: queryKeyMensajes });
-        const previousMessages = queryClient.getQueryData(queryKeyMensajes);
+            // 2. Le pasamos el texto Y el ID del mensaje al que estamos respondiendo (si existe) al Service
+            return ChatService.enviarMensaje(idChatSeleccionado, payload.texto, payload.respondidoA?.id || null);
+        },
 
-        const tempId = -(Date.now());
-        const usuarioIdNormalizado = Number(user?.id) || 0;
-        const ahora = new Date().toISOString();
+        // 3. EL ONMUTATE TAMBIÉN RECIBE EL OBJETO
+        onMutate: async (payload: EnviarMensajePayload) => {
+            const { texto: textoNuevo, respondidoA } = payload; // Extraemos las variables
 
-        // 4. ¡LA MAGIA OPTIMISTA! Agregamos el objeto respondidoA al mensaje falso
-        const mensajeOptimista = {
-            id: tempId,
-            contenido: textoNuevo,
-            sentAt: ahora,
-            chatId: idChatSeleccionado,
-            estado: "ENVIANDO",
-            sender: { id: usuarioIdNormalizado, nombre: user?.nombre || "Yo" },
-            respondidoA: respondidoA // <--- ACÁ ESTÁ LA CLAVE PARA LA UI
-        };
+            const queryKeyMensajes = ['mensajes', idChatSeleccionado];
 
-        // Inyectamos...
-        inyectarMensajeEnCache(queryClient, idChatSeleccionado, mensajeOptimista);
+            // Cancelamos peticiones en vuelo...
+            await queryClient.cancelQueries({ queryKey: queryKeyMensajes });
+            const previousMessages = queryClient.getQueryData(queryKeyMensajes);
 
-        // Sidebar update (Queda igual, mostramos el texto del mensaje como último mensaje)
-        queryClient.setQueryData(['chats', 'sidebar'], (old: any[] = []) =>
-            old.map(c =>
-                c.chat_id === idChatSeleccionado
-                    ? { ...c, ultimo_mensaje: textoNuevo, ultimo_mensaje_fecha: ahora, ultimo_mensaje_estado: 'ENVIANDO' }
-                    : c
-            )
-        );
+            const tempId = -(Date.now());
+            const usuarioIdNormalizado = Number(user?.id) || 0;
+            const ahora = new Date().toISOString();
 
-        return { previousMessages, tempId, usuarioIdNormalizado, queryKeyMensajes };
-    },
+            // 4. ¡LA MAGIA OPTIMISTA! Agregamos el objeto respondidoA al mensaje falso
+            const mensajeOptimista = {
+                id: tempId,
+                contenido: textoNuevo,
+                sentAt: ahora,
+                chatId: idChatSeleccionado,
+                estado: "ENVIANDO",
+                sender: { id: usuarioIdNormalizado, nombre: user?.nombre || "Yo" },
+                respondidoA: respondidoA // <--- ACÁ ESTÁ LA CLAVE PARA LA UI
+            };
+
+            // Inyectamos...
+            inyectarMensajeEnCache(queryClient, idChatSeleccionado, mensajeOptimista);
+
+            // Sidebar update (Queda igual, mostramos el texto del mensaje como último mensaje)
+            queryClient.setQueryData(['chats', 'sidebar'], (old: any[] = []) =>
+                old.map(c =>
+                    c.chat_id === idChatSeleccionado
+                        ? { ...c, ultimo_mensaje: textoNuevo, ultimo_mensaje_fecha: ahora, ultimo_mensaje_estado: 'ENVIANDO' }
+                        : c
+                )
+            );
+
+            return { previousMessages, tempId, usuarioIdNormalizado, queryKeyMensajes };
+        },
 
         onError: (_, __, context) => {
             // 4. ARREGLO DE LLAVE AL RESTAURAR
@@ -212,30 +213,35 @@ const enviarMensajeMutation = useMutation({
         }
     });
 
-   const enviarMensaje = (texto: string, mensajeRespondidoState: MensajeRespondido | null = null) => {
-    
-    enviarMensajeMutation.mutate({ 
-        texto: texto, 
-        respondidoA: mensajeRespondidoState 
-    });
+    const enviarMensaje = (texto: string, mensajeRespondidoState: MensajeRespondido | null = null) => {
 
-};
+        enviarMensajeMutation.mutate({
+            texto: texto,
+            respondidoA: mensajeRespondidoState
+        });
+
+    };
     // --- 5. DERIVADOS (Calculados al vuelo) ---
     // Ya no necesitas un estado para 'headerContactSelected'.
     // Lo calculamos buscando en la lista que ya tenemos en memoria.
     const headerContactSelected = useMemo(() => {
-        if (!idChatSeleccionado) return null;
-        const contacto = listaDeContactos.find(c => c.chat_id === idChatSeleccionado);
-        if (!contacto) return null; // O buscarlo en una API si no está en la lista
+    if (!idChatSeleccionado) return null;
 
-        return {
-            avatar_url: contacto.avatar_url,
-            nombre: contacto.nombre,
-            estado: contacto.estado,
-            usuario_id: contacto.usuario_id,
-            tipo: contacto.tipo
-        };
-    }, [idChatSeleccionado, listaDeContactos]);
+    // EL ESCUDO ANTI-BUGS: Forzamos ambos lados a String
+    const contacto = listaDeContactos.find(c => 
+        String(c.chat_id) === String(idChatSeleccionado)
+    );
+
+    if (!contacto) return null; 
+
+    return {
+        avatar_url: contacto.avatar_url,
+        nombre: contacto.nombre,
+        estado: contacto.estado,
+        usuario_id: contacto.usuario_id,
+        tipo: contacto.tipo
+    };
+}, [idChatSeleccionado, listaDeContactos]);
 
 
     // --- 6. RETORNO (La misma firma que antes) ---
@@ -248,7 +254,7 @@ const enviarMensajeMutation = useMutation({
         enviarMensaje,          // Función Wrapper de Mutación
         mensajeIdParaEnfocar,   // Estado Local
         setMensajeIdParaEnfocar, // Setter Local
-        viendoHistorial, 
+        viendoHistorial,
         volverAlPresente: () => setViendoHistorial(false)
     };
 };
