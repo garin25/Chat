@@ -179,6 +179,7 @@ export const ChatActivo = ({ idChatSeleccionado, enviarMensaje, headerContactSel
     // 2. EL EFECTO MAESTRO (Controla el scroll general y la búsqueda)
     // =========================================================
     useEffect(() => {
+        const contenedor = scrollContainerRef.current;
         // Si no hay mensajes, reseteamos el seguro y salimos
         if (!mensajesOrdenados || mensajesOrdenados.length === 0) {
             scrollInicialListo.current = false;
@@ -207,9 +208,30 @@ export const ChatActivo = ({ idChatSeleccionado, enviarMensaje, headerContactSel
                 // -------------------------------------------
                 if (mensajeIdParaEnfocar) {
                     const elemento = document.getElementById(`msg-${mensajeIdParaEnfocar}`);
+
+                    if (!contenedor || !elemento) {
+                        console.warn("⏳ Esperando que el DOM cargue...");
+                        return; // Cortamos la función acá mismo si algo es null
+                    }
+                    
                     if (elemento) {
                         // ÉXITO: Está cargado. Saltamos y quitamos seguro.
-                        elemento.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        // ✅ AGREGAMOS ESTO: Scroll matemático súper seguro para móviles
+
+                        // 1. ¿A qué distancia está el mensaje del techo del contenedor?
+                        const elementoArriba = elemento.offsetTop;
+
+                        // 2. ¿Cuánto mide el contenedor a la mitad?
+                        const mitadContenedor = contenedor.clientHeight / 2;
+
+                        // 3. ¿Cuánto mide el mensaje a la mitad? (Para centrarlo perfecto)
+                        const mitadElemento = elemento.clientHeight / 2;
+
+                        // 4. Le decimos AL CONTENEDOR que haga scroll internamente, dejando el body quieto
+                        contenedor.scrollTo({
+                            top: elementoArriba - mitadContenedor + mitadElemento,
+                            behavior: 'smooth'
+                        });
                         elemento.classList.add('mensaje-resaltado');
 
                         setTimeout(() => {

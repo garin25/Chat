@@ -27,11 +27,23 @@
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 html, body, #root {
+    /* 1. Clavamos el documento a la pantalla */
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    
+    /* 2. Prohibimos el scroll global */
+    overflow: hidden;
+    
+    /* 3. Evitamos el efecto de "rebote" (overscroll) típico de los celulares */
+    overscroll-behavior-y: none;
+    
     margin: 0;
     padding: 0;
-    height: 100%;
-    overflow: hidden !important; /* El !important es solo para asegurar que nada lo pise */
 }
+
 body {
   background-color: var(--bg-app);
   color: var(--text-primary);
@@ -266,6 +278,7 @@ body {
   min-height: 0;          /* TRUCO IMPORTANTE para que el scroll funcione en Flexbox */
   scroll-behavior: smooth;
   -webkit-overflow-scrolling: touch;
+  position: relative;
 }
 
 .chat-input-area {
@@ -279,6 +292,8 @@ body {
     border-top: 1px solid #313d45; /* Borde sutil separador */
     width: 100%;
     box-sizing: border-box;
+    /* FUNDAMENTAL PARA MÓVILES: Nunca menos de 16px */
+    font-size: 16px;
 }
 
 /* Envoltorio relativo para poder flotar el botón adentro */
