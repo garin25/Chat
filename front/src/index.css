@@ -300,6 +300,8 @@ body {
 .input-wrapper {
     position: relative;
     width: 100%;
+    display: flex;
+    align-items: flex-end; /* Mantiene la caja anclada abajo si crece */
 }
 
 .input-message.auto-expand {
@@ -323,7 +325,8 @@ body {
     overflow-y: auto; 
     
     /* Paddings y line-height son CLAVES para que la matemática de altura quede bien centrada */
-    padding: 10px 14px;
+    /*padding: 10px 14px;*/
+    padding: 10px 55px 10px 14px;
     line-height: 1.4; 
     
     /* La transición hace que cuando borrás todo de golpe, se achique suavemente */
@@ -369,6 +372,10 @@ body {
     font-size: 0.95rem;
     cursor: pointer;
     transition: color 0.2s ease, opacity 0.2s ease;
+
+    /* Evita que el botón se aplaste */
+    flex-shrink: 0; 
+    z-index: 10;  /* Por las dudas, para que siempre esté por encima del texto */
 }
 
 /* Efecto hover solo si el botón NO está deshabilitado */
