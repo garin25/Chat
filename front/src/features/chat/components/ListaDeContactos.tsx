@@ -54,8 +54,8 @@ export const ListaDeContactos = ({ listaDeContactos, seleccionarChat, creandoGru
       }
     },
   });
-  
- const toggleArchivadoMutation = useMutation({
+
+  const toggleArchivadoMutation = useMutation({
     mutationFn: (chatId: number) => ChatService.toggleArchivado(chatId),
 
     onMutate: async (chatId: number) => {
@@ -188,16 +188,18 @@ export const ListaDeContactos = ({ listaDeContactos, seleccionarChat, creandoGru
                   <span className="estado-icon">
                     {renderEstadoIcon(estado)}
                   </span>
-                  <span>{item.ultimo_mensaje}</span>
+                  {/* Agregamos la clase texto-truncado */}
+                  <span className="texto-truncado">{item.ultimo_mensaje}</span>
                 </>
               ) : (
                 /* CASO 2: Lo envió OTRO */
                 <>
                   {/* Opcional: Poner nombre si es grupo */}
-                  {item.tipo === 'group' && item.ultimo_mensaje_sender_name && <span style={{ fontWeight: 'bold' }}>{item.ultimo_mensaje_sender_name}: </span>}
-                  <span>{item.ultimo_mensaje}</span>
-                  {/* Si lo envió otro, NO mostramos ticks, solo el texto */}
-                  {/* A veces se muestra un puntito azul o contador si NO lo has leido tú */}
+                  {item.tipo === 'group' && item.ultimo_mensaje_sender_name && (
+                    <span className="sender-name">{item.ultimo_mensaje_sender_name}: </span>
+                  )}
+                  {/* Agregamos la clase texto-truncado acá también */}
+                  <span className="texto-truncado">{item.ultimo_mensaje}</span>
                 </>
               )}
 

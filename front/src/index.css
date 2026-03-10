@@ -302,38 +302,58 @@ body {
     width: 100%;
 }
 
-/* El input de texto */
-.input-message {
-    width: 100%;
-    padding: 12px 16px;
+.input-message.auto-expand {
     padding-right: 80px; /* IMPORTANTE: Deja espacio para el botón */
     border-radius: 8px;
     background-color: #2a3942; /* Fondo del input un poco más claro que el fondo general */
     color: #d1d7db; /* Texto blanco/grisáceo */
     border: 1px solid transparent; /* Sin borde por defecto */
     outline: none;
-    transition: background-color 0.2s ease, border-color 0.2s ease;
-    box-sizing: border-box;
     font-size: 1rem;
+    /* Sacamos la pestañita nativa de estirar */
+    resize: none; 
+    
+    /* Para que el cálculo de scrollHeight no se vuelva loco */
+    box-sizing: border-box; 
+    
+    /* El tope máximo. Si el texto supera esto, ahí recién aparece el scroll interno */
+    max-height: 120px; 
+    
+    /* Ocultamos el scrollbar hasta que superen el max-height */
+    overflow-y: auto; 
+    
+    /* Paddings y line-height son CLAVES para que la matemática de altura quede bien centrada */
+    padding: 10px 14px;
+    line-height: 1.4; 
+    
+    /* La transición hace que cuando borrás todo de golpe, se achique suavemente */
+    transition: height 0.1s ease-in-out;
+    
+    /* Escondemos la barra de scroll en navegadores Webkit (Chrome/Safari) para que quede más limpio */
+    scrollbar-width: none; /* Firefox */
 }
 
-/* Color del placeholder (el texto "Escribe un mensaje...") */
-.input-message::placeholder {
+.input-message.auto-expand::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+}
+
+.input-message.auto-expand::placeholder {
     color: #8696a0;
 }
 
 /* Efecto cuando el usuario hace clic en el input */
-.input-message:focus {
+.input-message.auto-expand:focus {
     background-color: #2a3942;
     border-color: #313d45; /* Le damos un borde muy sutil al hacer foco */
 }
 
 /* Efecto cuando no hay chat seleccionado */
-.input-message:disabled {
+.input-message.auto-expand:disabled {
     background-color: #202c33;
     opacity: 0.6;
     cursor: not-allowed;
 }
+
 
 /* El botón flotante */
 .btn-enviar {
@@ -991,4 +1011,25 @@ input::placeholder {
     font-size: 13px;
     font-weight: 500;
     z-index: 1000; /* Para que quede por encima de los chats */
+}
+
+/* LA REGLA DE ORO PARA CORTAR TEXTOS */
+.texto-truncado {
+    white-space: nowrap;        /* 1. Prohíbe que el texto baje a una segunda línea */
+    overflow: hidden;           /* 2. Oculta todo el texto que se escape del ancho */
+    text-overflow: ellipsis;    /* 3. Agrega los "..." al final de lo que se llegó a ver */
+    
+    display: block;             /* Necesario porque los <span> por defecto son inline */
+}
+
+/* (Opcional) Si en los grupos mostrás el nombre ("Juan: Hola..."), 
+   podés hacer que compartan la misma línea usando flex */
+.sender-name {
+    font-weight: 600;
+    margin-right: 4px;
+    white-space: nowrap; /* Para que el nombre tampoco se parta en dos líneas */
+}
+
+.ultimo-mensaje-row{
+    overflow: hidden;
 }

@@ -32,7 +32,7 @@ public class Chat {
     @Column(name = "avatar_url")
     private String avatarUrl;   // Avatar del grupo
 
-    @Column(name = "ultimo_mensaje_contenido")
+    @Column(name = "ultimo_mensaje_contenido" ,columnDefinition = "TEXT")
     private String ultimoMensajeContenido;
     @Column(name = "ultimo_mensaje_fecha")
     private LocalDateTime ultimoMensajeFecha;
