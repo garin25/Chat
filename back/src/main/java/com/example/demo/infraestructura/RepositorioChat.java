@@ -19,7 +19,8 @@ public interface RepositorioChat extends JpaRepository<Chat, Long> {
     @Query("SELECT DISTINCT c FROM Chat c " +
             "JOIN FETCH c.participantes p " +
             "JOIN FETCH p.usuario u " +
-            "WHERE c.id IN (SELECT p2.chat.id FROM Participante p2 WHERE p2.usuario.id = :miId)")
+            "WHERE c.id IN (SELECT p2.chat.id FROM Participante p2 WHERE p2.usuario.id = :miId) " +
+            "ORDER BY c.ultimoMensajeFecha DESC NULLS LAST")
     List<Chat> encontrarMisChatsCompletos(@Param("miId") Long miId);
 
     @Query("SELECT m FROM Mensaje m " +

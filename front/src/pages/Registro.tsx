@@ -4,13 +4,17 @@ import { z } from "zod";
 import { Link, useNavigate } from "react-router-dom";
 import './Auth.css';
 
-// 1. OPTIMIZACIÓN: El esquema va AFUERA del componente
 const schema = z.object({
-    telefono: z.string().min(8, "El telefono debe tener al menos 8 caracteres"),
-    nombre: z.string().min(2, "El Nombre debe tener al menos 2 caracteres"),
+    telefono: z.string().min(8, "El teléfono debe tener al menos 8 caracteres"),
+    nombre: z.string().min(2, "El nombre debe tener al menos 2 caracteres"),
     estado: z.string().optional(),
-    password: z.string().min(6, "La contraseña debe tener al menos 6 caracteres")
+    password: z.string().min(6, "La contraseña debe tener al menos 6 caracteres"),
+    confirmarPassword: z.string() 
+}).refine((data) => data.password === data.confirmarPassword, {
+    message: "Las contraseñas no coinciden",
+    path: ["confirmarPassword"], // Le decimos a Zod que ponga el error en este campo
 });
+
 
 type RegistroFormValues = z.infer<typeof schema>;
 
@@ -27,10 +31,12 @@ function Registro() {
     });
 
     const onSubmit = async (data: RegistroFormValues) => {
+        //separamos confirmarPassword ya que no lo debo enviar
+        const { confirmarPassword, ...datosParaBackend } = data;
         try {
             const response = await fetch(`${API_URL}/api/usuarios/registrar`, {
                 method: 'POST',
-                body: JSON.stringify(data),
+                body: JSON.stringify(datosParaBackend),
                 headers: { 'Content-Type': 'application/json' },
             });
             const dataResponse = await response.json();
@@ -94,9 +100,19 @@ function Registro() {
                         <input 
                             type="password" 
                             className="form-input"
-                            {...register("password", { required: "Contraseña requerida" })} 
+                            {...register("password")} 
                         />
                         {errors.password && <span className="error-msg">{errors.password.message}</span>}
+                    </div>
+
+                    <div className="form-group">
+                        <label className="form-label">Confirmar Contraseña</label>
+                        <input 
+                            type="password" 
+                            className="form-input"
+                            {...register("confirmarPassword")} 
+                        />
+                        {errors.confirmarPassword && <span className="error-msg">{errors.confirmarPassword.message}</span>}
                     </div>
 
                     <button type="submit" className="submit-btn">Registrarme</button>

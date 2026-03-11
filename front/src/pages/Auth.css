@@ -4,35 +4,38 @@
 .auth-container {
   display: flex;
   justify-content: center;
-  align-items: center; /* Intenta centrar verticalmente */
-  
-  /* Restamos la altura aprox de la navbar (ej: 70px) para que el centro sea real */
-  min-height: calc(100vh - 70px); 
-  
+  align-items: center;
+  /* Intenta centrar verticalmente */
   background-color: #111b21;
   font-family: 'Segoe UI', Helvetica, Arial, sans-serif;
   color: #e9edef;
-  
-  padding-top: 20px;    
-  padding-bottom: 40px; 
+  min-height: 100vh;
+  /* Ocupa el 100% del alto de tu pantalla */
+  box-sizing: border-box;
+  padding: 20px;
 }
 
 /* La tarjeta central */
 .auth-card {
   /* Gris oscuro azulado para diferenciar del fondo */
-  background: #202c33; 
+  background: #202c33;
   padding: 2rem;
   border-radius: 10px;
   /* Sombra más intensa para el modo oscuro */
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5); 
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
   width: 100%;
-  max-width: 400px;
+  max-width: 380px;
+  max-height: 90vh;
+  /* Nunca va a medir más del 90% de la pantalla */
+  overflow-y: auto;
+  /* Si el form es más largo que la pantalla, aparece un scroll solo en la cajita */
 }
 
 .auth-title {
   text-align: center;
-  color: #e9edef; /* Blanco suave */
-  margin-bottom: 1.5rem;
+  color: #e9edef;
+  /* Blanco suave */
+  margin-bottom: 1rem;
   font-size: 1.8rem;
   font-weight: 300;
 }
@@ -41,48 +44,53 @@
 .auth-form {
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 4px;
 }
 
 /* Grupos de inputs */
 .form-group {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 2px;
 }
 
 .form-label {
   font-size: 0.9rem;
-  color: #8696a0; /* Gris medio para etiquetas */
+  color: #8696a0;
+  /* Gris medio para etiquetas */
   font-weight: 500;
 }
 
 .form-input {
   padding: 10px 12px;
-  border: 1px solid #2a3942; /* Borde sutil */
+  border: 1px solid #2a3942;
+  /* Borde sutil */
   border-radius: 5px;
   font-size: 1rem;
   /* Fondo del input más claro que la tarjeta */
-  background-color: #2a3942; 
-  color: #e9edef; /* Texto blanco al escribir */
+  background-color: #2a3942;
+  color: #e9edef;
+  /* Texto blanco al escribir */
   transition: all 0.2s;
 }
 
 .form-input::placeholder {
-  color: #8696a0; /* Placeholder grisáceo */
+  color: #8696a0;
+  /* Placeholder grisáceo */
 }
 
 .form-input:focus {
   outline: none;
-  border-color: #00a884; /* Verde característico */
+  border-color: #00a884;
+  /* Verde característico */
   /* Mantenemos el fondo oscuro al enfocar */
-  background-color: #2a3942; 
+  background-color: #2a3942;
   box-shadow: 0 0 0 1px #00a884;
 }
 
 /* Autocompletar del navegador (fix para que no se ponga blanco feo) */
 .form-input:-webkit-autofill,
-.form-input:-webkit-autofill:hover, 
+.form-input:-webkit-autofill:hover,
 .form-input:-webkit-autofill:focus {
   -webkit-text-fill-color: #e9edef;
   -webkit-box-shadow: 0 0 0px 1000px #2a3942 inset;
@@ -91,17 +99,20 @@
 
 /* Mensajes de error */
 .error-msg {
-  color: #f15c6d; /* Rojo suave/salmón para leerse mejor en oscuro */
+  color: #f15c6d;
+  /* Rojo suave/salmón para leerse mejor en oscuro */
   font-size: 0.8rem;
   margin-top: 2px;
 }
 
 /* Botón */
 .submit-btn {
-  margin-top: 10px;
-  padding: 12px;
-  background-color: #00a884; /* Verde principal */
-  color: #111b21; /* Texto oscuro para contraste con el verde */
+  margin-top: 5px;
+  padding: 6px;
+  background-color: #00a884;
+  /* Verde principal */
+  color: #111b21;
+  /* Texto oscuro para contraste con el verde */
   border: none;
   border-radius: 25px;
   font-size: 1rem;
@@ -111,19 +122,21 @@
 }
 
 .submit-btn:hover {
-  background-color: #00cfa2; /* Verde un poco más brillante al hover */
+  background-color: #00cfa2;
+  /* Verde un poco más brillante al hover */
 }
 
 /* Link al pie (Login/Registro) */
 .auth-footer {
-  margin-top: 20px;
+  margin-top: 10px;
   text-align: center;
   font-size: 0.9rem;
   color: #8696a0;
 }
 
 .auth-link {
-  color: #53bdeb; /* Azul claro o Verde claro para links */
+  color: #53bdeb;
+  /* Azul claro o Verde claro para links */
   text-decoration: none;
   font-weight: 500;
   margin-left: 5px;
@@ -133,3 +146,54 @@
   color: #00a884;
   text-decoration: underline;
 }
+
+
+/* 1. La caja que envuelve al input y al botón */
+.password-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+/* 2. El Input (Le hacemos lugar al botón) */
+.form-input.password-input {
+  width: 100%;
+  /* PADDING MÁGICO: Arriba, Derecha (espacio para el botón), Abajo, Izquierda */
+  padding-right: 70px;
+  box-sizing: border-box;
+}
+
+/* 3. El Botón "Mostrar/Ocultar" */
+.toggle-password-btn {
+  position: absolute;
+  right: 10px;
+  /* Lo despegamos un poquito del borde derecho */
+  /* Reseteamos los estilos feos del botón por defecto */
+  background: transparent;
+  border: none;
+  outline: none;
+
+  /* Estética de texto */
+  color: #8696a0;
+  /* Un gris sutil onda WhatsApp oscuro */
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding-bottom: 8px;
+
+  /* Transición suave para el hover */
+  transition: color 0.2s ease;
+}
+
+/* Efecto al pasar el mouse */
+.toggle-password-btn:hover {
+  color: #00a884;
+  /* Verde WhatsApp */
+}
+
+/* Si te llega a quedar el texto muy pegado arriba o abajo, 
+   podés ajustar la posición vertical del botón así: 
+   top: 50%;
+   transform: translateY(-50%); 
+*/
