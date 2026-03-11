@@ -15,6 +15,7 @@ public interface ServicioChat {
 
     ChatSidebarDTO getChatHeaderInfo(Long chatId, Long miId);
 
+    @Transactional
     Mensaje enviarAlChat(Long miId, Long chatId, String contenido,Long replyToId);
 
     @Transactional
@@ -35,7 +36,6 @@ public interface ServicioChat {
 
     List<BusquedaResponseDTO> buscarCoincidencias(Usuario yo, BusquedaDTO body);
 
-    @Transactional
     NotificacionDTO procesarYEnviarMensaje(Mensaje mensajeGuardado);
 
     String procesarLecturaYNotificar(Long chatId, Long lectorId);
