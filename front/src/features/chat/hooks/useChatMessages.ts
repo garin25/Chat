@@ -90,9 +90,14 @@ export const useChatMessages = (
         // 4. Abrimos el chat (esto dispara el renderizado de ChatActivo.tsx)
         setIdChatSeleccionado(idNormalizado);
 
-        // 5. Actualizamos el estado de "Leído" en el Sidebar visualmente
+       // 5. Actualizamos el estado de "Leído" en el Sidebar visualmente
         queryClient.setQueryData(['chats', 'sidebar'], (old: any[] = []) =>
-            old.map(c => c.chat_id === idNormalizado ? { ...c, cantidadNoLeidos: 0, ultimo_mensaje_estado: 'LEIDO' } : c)
+            old.map(c => 
+                // Comparamos ambos como String ya que en la cache de tanstack los id estan guardados asi
+                String(c.chat_id) === String(idNormalizado) 
+                    ? { ...c, cantidadNoLeidos: 0, ultimo_mensaje_estado: 'LEIDO' } 
+                    : c
+            )
         );
     };
 
