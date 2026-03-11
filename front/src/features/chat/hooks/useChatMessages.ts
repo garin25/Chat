@@ -109,117 +109,117 @@ export const useChatMessages = (
 
 
     const enviarMensajeMutation = useMutation({
-        // 1. AHORA RECIBIMOS UN OBJETO
+        // 1. LA LLAMADA A LA API
         mutationFn: (payload: EnviarMensajePayload) => {
             if (!idChatSeleccionado) throw new Error("No hay chat seleccionado");
-
-            // 2. Le pasamos el texto Y el ID del mensaje al que estamos respondiendo (si existe) al Service
             return ChatService.enviarMensaje(idChatSeleccionado, payload.texto, payload.respondidoA?.id || null);
         },
 
-        // 3. EL ONMUTATE TAMBIÉN RECIBE EL OBJETO
+        // 2. LA MAGIA OPTIMISTA (Frontend UI instantánea)
         onMutate: async (payload: EnviarMensajePayload) => {
-            const { texto: textoNuevo, respondidoA } = payload; // Extraemos las variables
+            const { texto: textoNuevo, respondidoA } = payload;
+            const queryKeyMensajes = ['mensajes', Number(idChatSeleccionado)];
 
-            const queryKeyMensajes = ['mensajes', idChatSeleccionado];
-
-            // Cancelamos peticiones en vuelo...
+            // Cancelamos peticiones en vuelo para que nada pise nuestra magia
             await queryClient.cancelQueries({ queryKey: queryKeyMensajes });
             const previousMessages = queryClient.getQueryData(queryKeyMensajes);
 
+            // Creamos el mensaje temporal falso
             const tempId = -(Date.now());
             const usuarioIdNormalizado = Number(user?.id) || 0;
             const ahora = new Date().toISOString();
 
-            // 4. ¡LA MAGIA OPTIMISTA! Agregamos el objeto respondidoA al mensaje falso
             const mensajeOptimista = {
                 id: tempId,
                 contenido: textoNuevo,
                 sentAt: ahora,
                 chatId: idChatSeleccionado,
-                estado: "ENVIANDO",
+                estado: "ENVIANDO", // Estado: Relojito
                 sender: { id: usuarioIdNormalizado, nombre: user?.nombre || "Yo" },
-                respondidoA: respondidoA // <--- ACÁ ESTÁ LA CLAVE PARA LA UI
+                respondidoA: respondidoA 
             };
 
-            // Inyectamos...
+            // Inyectamos el mensaje en la burbuja del chat
             inyectarMensajeEnCache(queryClient, idChatSeleccionado, mensajeOptimista);
 
-            // Sidebar update (Queda igual, mostramos el texto del mensaje como último mensaje)
-            queryClient.setQueryData(['chats', 'sidebar'], (old: any[] = []) =>
-                old.map(c =>
-                    c.chat_id === idChatSeleccionado
-                        ? { ...c, ultimo_mensaje: textoNuevo, ultimo_mensaje_fecha: ahora, ultimo_mensaje_estado: 'ENVIANDO' }
+            // Actualizamos el Sidebar: Cambia el texto y vuela al primer lugar
+            queryClient.setQueryData(['chats', 'sidebar'], (old: any[] = []) => {
+                const listaActualizada = old.map(c =>
+                    String(c.chat_id || c.chatId) === String(idChatSeleccionado)
+                        ? { 
+                            ...c, 
+                            ultimo_mensaje: textoNuevo, 
+                            ultimo_mensaje_fecha: ahora, 
+                            ultimo_mensaje_estado: 'ENVIANDO' 
+                          }
                         : c
-                )
-            );
-
-            return { previousMessages, tempId, usuarioIdNormalizado, queryKeyMensajes };
-        },
-
-        onError: (_, __, context) => {
-            // 4. ARREGLO DE LLAVE AL RESTAURAR
-            if (context?.previousMessages !== undefined && context?.queryKeyMensajes) {
-                queryClient.setQueryData(
-                    context.queryKeyMensajes,
-                    context.previousMessages // Restauramos el InfiniteData completo
                 );
-            }
+
+                // Ordenamos por fecha para que el chat suba
+                return listaActualizada.sort((a, b) => 
+                    new Date(b.ultimo_mensaje_fecha).getTime() - new Date(a.ultimo_mensaje_fecha).getTime()
+                );
+            });
+
+            return { previousMessages, tempId, queryKeyMensajes };
         },
 
+        // 3. EL ÉXITO (Backend confirmó el guardado)
         onSuccess: (mensajeRealGuardado, _variables, context) => {
-
-            // 1. Usamos EXACTAMENTE la misma llave que usó el onMutate
             const queryKey = context?.queryKeyMensajes || ['mensajes', Number(idChatSeleccionado)];
 
+            // A. Reemplazamos el mensaje falso por el real en el historial
             queryClient.setQueryData(queryKey, (oldData: any) => {
                 if (!oldData || !oldData.pages) return oldData;
 
-                let loEncontre = false;
-                console.log("Lo encontro?", loEncontre);
-
-                // 2. Mapeamos TODAS las páginas, no solo la 0
-                const nuevasPaginas = oldData.pages.map((page: any) => {
-                    return {
-                        ...page,
-                        content: page.content.map((m: any) => {
-                            // 3. Comparamos forzando a String para evitar que 15 sea distinto de "15"
-                            if (String(m.id) === String(context?.tempId)) {
-                                loEncontre = true;
-
-                                // Combinamos el mensaje optimista (que tiene la estructura de UI correcta)
-                                // con los datos reales que nos confirmó la base de datos (incluyendo respondidoA)
-                                return {
-                                    ...m,
-                                    id: mensajeRealGuardado?.id || m.id,
-                                    estado: m.estado === "LEIDO" ? "LEIDO" : "ENTREGADO",
-                                    sentAt: mensajeRealGuardado?.sentAt || m.sentAt,
-                                    respondidoA: mensajeRealGuardado?.respondidoA || m.respondidoA || null,
-                                };
-                            }
-                            return m;
-                        })
-                    };
-                });
+                const nuevasPaginas = oldData.pages.map((page: any) => ({
+                    ...page,
+                    content: page.content.map((m: any) => {
+                        if (String(m.id) === String(context?.tempId)) {
+                            return {
+                                ...m,
+                                id: mensajeRealGuardado?.id || m.id,
+                                estado: m.estado === "LEIDO" ? "LEIDO" : "ENTREGADO", // Estado: Tilde gris
+                                sentAt: mensajeRealGuardado?.sentAt || m.sentAt,
+                                respondidoA: mensajeRealGuardado?.respondidoA || m.respondidoA || null,
+                            };
+                        }
+                        return m;
+                    })
+                }));
 
                 return { ...oldData, pages: nuevasPaginas };
             });
 
-            queryClient.invalidateQueries({
-                queryKey: ['mensajes', Number(idChatSeleccionado)],
-                refetchType: 'all' // Fuerza a buscar los datos frescos en el background
+            // B. Actualizamos el Sidebar de "ENVIANDO" a "ENTREGADO"
+            queryClient.setQueryData(['chats', 'sidebar'], (old: any[] = []) => {
+                if (!old) return old;
+                const listaActualizada = old.map(c =>
+                    String(c.chat_id || c.chatId) === String(idChatSeleccionado)
+                        ? { ...c, ultimo_mensaje_estado: 'ENTREGADO' } 
+                        : c
+                );
+
+                // Mantenemos el orden cronológico
+                return listaActualizada.sort((a, b) => 
+                    new Date(b.ultimo_mensaje_fecha).getTime() - new Date(a.ultimo_mensaje_fecha).getTime()
+                );
             });
 
-            // Sidebar update
-            queryClient.setQueryData(['chats', 'sidebar'], (old: any[] = []) => {
-                const index = old.findIndex(c => String(c.chat_id || c.chatId) === String(idChatSeleccionado));
-                if (index === -1) return old;
-                const contacto = { ...old[index] };
-                const nuevaLista = [...old];
-                nuevaLista.splice(index, 1);
-                nuevaLista.unshift(contacto);
-                return nuevaLista;
+            // C. Refetch silencioso de fondo por si algo quedó desincronizado
+            queryClient.invalidateQueries({
+                queryKey: ['mensajes', Number(idChatSeleccionado)],
+                refetchType: 'all' 
             });
+        },
+
+        // 4. EL ERROR (Rollback de emergencia)
+        onError: (_err, _newTodo, context) => {
+            if (context?.previousMessages) {
+                // Si explotó la red, borramos el mensaje temporal falso restaurando la caché vieja
+                queryClient.setQueryData(context.queryKeyMensajes, context.previousMessages);
+            }
+            console.error("Falló el envío del mensaje, revirtiendo estado optimista.");
         }
     });
 
