@@ -3,6 +3,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/features/auth/AuthContext";
+import { useRef, useState } from "react";
 
 // 1. OPTIMIZACIÓN: El esquema va AFUERA del componente
 const schema = z.object({
@@ -16,7 +17,7 @@ function LoginForm() {
     const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
     const navigate = useNavigate(); // Hook para navegar
     const { login } = useAuth(); // Tu función del contexto
-
+    const [mostrandoContrasenia, setMostrandoContrasenia] = useState(false);
     const {
         register,
         handleSubmit,
@@ -56,27 +57,46 @@ function LoginForm() {
         }
     };
 
+    const handleMostrarContrasenia = () => {
+        console.log("handle mostrar contra");
+        setMostrandoContrasenia(!mostrandoContrasenia);
+    };
+
     return (
         <div className="auth-container">
             <div className="auth-card">
                 <h2 className="auth-title">Iniciar Sesión</h2>
-                <form onSubmit={handleSubmit(onSubmit)}  className="auth-form">
+                <form onSubmit={handleSubmit(onSubmit)} className="auth-form">
                     <div className="form-group">
                         <label>Telefono:</label>
-                        <input type="text"  className="form-input" {...register("telefono")} />
+                        <input type="text" className="form-input" {...register("telefono")} />
                         {errors.telefono && <span className="error-msg">{errors.telefono.message}</span>}
                     </div>
                     <div className="form-group">
                         <label>Password:</label>
-                        <input type="password"  className="form-input" {...register("password")} />
+                        {/* NUEVO CONTENEDOR RELATIVO */}
+                        <div className="password-input-wrapper">
+                            <input
+                                type={mostrandoContrasenia ? "text" : "password"}
+                                className="form-input password-input" /* Agregamos una clase extra acá */
+                                {...register("password")}
+                            />
+                            <button
+                                type="button"
+                                onClick={handleMostrarContrasenia}
+                                className="toggle-password-btn"
+                            >
+                                {mostrandoContrasenia ? "Ocultar" : "Mostrar"}
+                            </button>
+                        </div>
                         {errors.password && <span className="error-msg">{errors.password.message}</span>}
                     </div>
 
                     <button type="submit" className="submit-btn">Login</button>
                     <div className="auth-footer">
-                    ¿No tenés cuenta? 
-                    <Link to="/wsp/registro" className="auth-link">Registro</Link>
-                </div>
+                        ¿No tenés cuenta?
+                        <Link to="/wsp/registro" className="auth-link">Registro</Link>
+                    </div>
                 </form>
             </div>
         </div>
