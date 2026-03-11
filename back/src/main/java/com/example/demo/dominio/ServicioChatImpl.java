@@ -497,32 +497,34 @@ public class ServicioChatImpl implements ServicioChat {
 
     @Transactional(readOnly = true)
     public List<MensajeDTO> obtenerContextoDeMensaje(Long chatId, Long mensajeId) {
-        // 1. Buscamos el mensaje objetivo asegurándonos de que pertenezca a este chat
         Mensaje objetivo = repositorioMensaje.findByIdAndChatId(mensajeId, chatId)
                 .orElseThrow(() -> new RuntimeException("El mensaje no existe o no pertenece a este chat"));
 
-        // 2. Buscamos los 20 anteriores (Vienen ordenados del más nuevo al más viejo: 99, 98, 97...)
+        // 1. Buscamos los 20 ANTERIORES.
+        // Como usamos OrderByIdDesc, ya vienen bien: 99, 98, 97...
         List<Mensaje> anteriores = repositorioMensaje.findTop20ByChatIdAndIdLessThanOrderByIdDesc(chatId, mensajeId);
 
-        // 3. Buscamos los 20 posteriores (Vienen ordenados del más viejo al más nuevo: 101, 102, 103...)
+        // 2. Buscamos los 20 POSTERIORES.
+        // Usamos OrderByIdAsc para agarrar los inmediatos (101, 102, 103...)
         List<Mensaje> posteriores = repositorioMensaje.findTop20ByChatIdAndIdGreaterThanOrderByIdAsc(chatId, mensajeId);
 
-        // 4. Armamos el Sánguche Cronológico
+        // Pero como necesitamos el array en reversa, los damos vuelta acá:
+        // Ahora quedan: 103, 102, 101...
+        Collections.reverse(posteriores);
+
+        // 3. Armamos el Sánguche Descendente (Nuevos -> Objetivo -> Viejos)
         List<Mensaje> contextoCompleto = new ArrayList<>();
 
-        // Como los anteriores vinieron DESC, los damos vuelta para que queden cronológicos (97, 98, 99)
-        Collections.reverse(anteriores);
-        contextoCompleto.addAll(anteriores);
+        // Primero los más nuevos
+        contextoCompleto.addAll(posteriores);
 
-        // Agregamos la carne del sánguche (el mensaje 100)
+        // La carne del sánguche
         contextoCompleto.add(objetivo);
 
-        // Agregamos los posteriores (101, 102, 103)
-        contextoCompleto.addAll(posteriores);
-        // 5. Convertimos a DTO y retornamos
+        // Por último los más viejos
+        contextoCompleto.addAll(anteriores);
+
         return mensajeMapper.toDtoList(contextoCompleto);
-
-
     }
 
     @Override

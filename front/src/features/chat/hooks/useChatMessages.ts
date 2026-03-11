@@ -59,7 +59,7 @@ export const useChatMessages = (
 
     // A. Seleccionar Chat
     const seleccionarChat = async (chatId: number | null, mensajeId?: number) => {
-       const idNormalizado = chatId ? Number(chatId) : null;
+        const idNormalizado = chatId ? Number(chatId) : null;
         if (idNormalizado === null) {
             setIdChatSeleccionado(null);
             setViendoHistorial(false); // Reseteamos
@@ -69,13 +69,18 @@ export const useChatMessages = (
         if (mensajeId) {
             try {
                 const contexto = await ChatService.obtenerContextoMensaje(idNormalizado, mensajeId);
-
-                // ¡PISAMOS LA CACHÉ!
+                // 2. ¿Sacamos el array de adentro de la propiedad "content"
+                const mensajesArray = contexto.content;
+                // 3. Pisamos la caché
+                // OJO ACÁ: Volvemos a armar el objeto { content: [...] } para que 
+                // tu historial de TanStack Query no se rompa cuando quieras scrollear más
                 queryClient.setQueryData(['mensajes', idNormalizado], {
-                    pages: [contexto],
+                    pages: [{
+                        ...contexto, // Mantenemos los datos de paginación (page, size, etc)
+                        content: mensajesArray // Reemplazamos el array desordenado por el nuestro
+                    }],
                     pageParams: [0]
                 });
-
                 setMensajeIdParaEnfocar(mensajeId);
                 setViendoHistorial(true); // 👈 ¡ESTAMOS EN EL PASADO!
 
@@ -90,12 +95,12 @@ export const useChatMessages = (
         // 4. Abrimos el chat (esto dispara el renderizado de ChatActivo.tsx)
         setIdChatSeleccionado(idNormalizado);
 
-       // 5. Actualizamos el estado de "Leído" en el Sidebar visualmente
+        // 5. Actualizamos el estado de "Leído" en el Sidebar visualmente
         queryClient.setQueryData(['chats', 'sidebar'], (old: any[] = []) =>
-            old.map(c => 
+            old.map(c =>
                 // Comparamos ambos como String ya que en la cache de tanstack los id estan guardados asi
-                String(c.chat_id) === String(idNormalizado) 
-                    ? { ...c, cantidadNoLeidos: 0, ultimo_mensaje_estado: 'LEIDO' } 
+                String(c.chat_id) === String(idNormalizado)
+                    ? { ...c, cantidadNoLeidos: 0, ultimo_mensaje_estado: 'LEIDO' }
                     : c
             )
         );
@@ -230,23 +235,23 @@ export const useChatMessages = (
     // Ya no necesitas un estado para 'headerContactSelected'.
     // Lo calculamos buscando en la lista que ya tenemos en memoria.
     const headerContactSelected = useMemo(() => {
-    if (!idChatSeleccionado) return null;
+        if (!idChatSeleccionado) return null;
 
-    // EL ESCUDO ANTI-BUGS: Forzamos ambos lados a String
-    const contacto = listaDeContactos.find(c => 
-        String(c.chat_id) === String(idChatSeleccionado)
-    );
+        // EL ESCUDO ANTI-BUGS: Forzamos ambos lados a String
+        const contacto = listaDeContactos.find(c =>
+            String(c.chat_id) === String(idChatSeleccionado)
+        );
 
-    if (!contacto) return null; 
+        if (!contacto) return null;
 
-    return {
-        avatar_url: contacto.avatar_url,
-        nombre: contacto.nombre,
-        estado: contacto.estado,
-        usuario_id: contacto.usuario_id,
-        tipo: contacto.tipo
-    };
-}, [idChatSeleccionado, listaDeContactos]);
+        return {
+            avatar_url: contacto.avatar_url,
+            nombre: contacto.nombre,
+            estado: contacto.estado,
+            usuario_id: contacto.usuario_id,
+            tipo: contacto.tipo
+        };
+    }, [idChatSeleccionado, listaDeContactos]);
 
 
     // --- 6. RETORNO (La misma firma que antes) ---

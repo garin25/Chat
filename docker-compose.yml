@@ -32,6 +32,7 @@ services:
       - SPRING_DATASOURCE_PASSWORD=root
       - SPRING_JPA_HIBERNATE_DDL_AUTO=update
       - JWT_SECRET=UnaClaveSuperSecreta123
+      - TZ=America/Argentina/Buenos_Aires
     depends_on:
       db:
         condition: service_healthy
