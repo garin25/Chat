@@ -10,6 +10,8 @@ import com.example.demo.excepciones.RecursoNoEncontradoException;
 import com.example.demo.excepciones.RecursoRepetidoException;
 import com.example.demo.infraestructura.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
@@ -44,6 +46,9 @@ public class ServicioChatImpl implements ServicioChat {
     private BusquedaMensajeMapper busquedaMensajeMapper;
     @Autowired
     private SimpMessagingTemplate messagingTemplate;
+    @Autowired
+    private CacheManager cacheManager;
+
 
 
     @Override
@@ -65,36 +70,45 @@ public class ServicioChatImpl implements ServicioChat {
         Map<Long, String> mapaDeAlias = obtenerMapaDeAlias(miId);
         return mapearChatADTO(chat, miId, mapaDeAlias);
     }
+    @Transactional
     @Override
-    @CacheEvict(value = "sidebar", allEntries = true)
-    public Mensaje enviarAlChat(Long miId, Long chatId, String contenido,Long replyToId) {
+    public Mensaje enviarAlChat(Long miId, Long chatId, String contenido, Long replyToId) {
         Chat chat = repositorioChat.findById(chatId).orElseThrow();
-        Optional<Usuario> usuario = repositorioLogin.findById(miId);
+        Usuario usuario = repositorioLogin.findById(miId).orElseThrow();
+
         Mensaje mensaje = new Mensaje();
-        mensaje.setSender(usuario.get());
+        mensaje.setSender(usuario);
         mensaje.setContenido(contenido);
         mensaje.setChat(chat);
 
         if (replyToId != null) {
             Mensaje mensajeRespondido = repositorioMensaje.findById(replyToId)
                     .orElseThrow(() -> new RecursoNoEncontradoException("El mensaje original no existe"));
-
-            // Le seteamos la entidad entera (Hibernate guarda solo el ID en la tabla)
             mensaje.setMensajeRespondido(mensajeRespondido);
+
+            // 1. INICIALIZACIÓN: Traemos el nombre del que envió el mensaje original
+            mensajeRespondido.getSender().getNombre();
         }
 
-        //Actualizar Chat (Desnormalización)
+        // Actualizar Chat (Desnormalización)
         chat.setUltimoMensajeContenido(contenido);
         chat.setUltimoMensajeFecha(mensaje.getSentAt());
         chat.setUltimoMensajeSenderId(miId);
         chat.setUltimoMensajeEstado(EstadoMensaje.ENVIADO);
-        repositorioChat.save(chat); // Actualizamos el chat
+        repositorioChat.save(chat);
+
+        // Invalidamos la caché solo para los involucrados
+        // (Acá adentro, al hacer el for sobre getParticipantes(), ¡ya estás inicializando la lista!)
+        invalidarCacheSidebarParticipantes(chat);
+
+        // 2. INICIALIZACIÓN: Traemos tu nombre para que el WebSocket no lo tenga que buscar
+        usuario.getNombre();
+
         return repositorioMensaje.save(mensaje);
     }
 
     @Transactional
     @Override
-    @CacheEvict(value = "sidebar", allEntries = true)
     public Contacto agendarContacto(Usuario usuarioTitular, NewContactDTO contactoDTO) {
 
         // 1, 2 y 3. (Tus validaciones iniciales quedan EXACTAMENTE igual)
@@ -155,7 +169,6 @@ public class ServicioChatImpl implements ServicioChat {
 
     @Transactional
     @Override
-    @CacheEvict(value = "sidebar", allEntries = true)
     public Chat crearGrupo(Usuario yo, NewGroupDTO body) {
         if (body.getIntegrantes().isEmpty()) {
             throw new RecursoNoEncontradoException("Los integrantes son obligatorios");
@@ -190,13 +203,13 @@ public class ServicioChatImpl implements ServicioChat {
 
             repositorioParticipante.save(participante);
         }
-
+        // Invalidamos la caché solo para los involucrados
+        invalidarCacheSidebarParticipantes(chat);
         return chat;
     }
 
     @Transactional
     @Override
-    @CacheEvict(value = "sidebar", allEntries = true)
     public List<Mensaje> marcarMensajesComoLeidos(Long chatId, Long lectorId) {
 
         // 1. Buscamos los mensajes que están pendientes de leer
@@ -236,6 +249,8 @@ public class ServicioChatImpl implements ServicioChat {
                 repositorioChat.save(chat);
             }
         }
+        // Invalidamos la caché solo para los involucrados
+        invalidarCacheSidebarParticipantes(chat);
         // 4. Retornamos la lista para que el Controller/Socket pueda notificar
         return mensajesActualizados;
     }
@@ -316,10 +331,8 @@ public class ServicioChatImpl implements ServicioChat {
         return busquedaMensajeMapper.toDtoList(mensajes);
     }
 
-    @Transactional
     @Override
     public NotificacionDTO procesarYEnviarMensaje(Mensaje mensajeGuardado) { // Cambié void por DTO
-
         // 1. Convertimos a DTO (Una sola vez para usarlo en todos lados)
         NotificacionDTO dto = new NotificacionDTO();
         dto.setId(mensajeGuardado.getId());
@@ -363,13 +376,16 @@ public class ServicioChatImpl implements ServicioChat {
         // 3. Canal del Chat Activo (Para quien lo está leyendo ahora)
         messagingTemplate.convertAndSend("/topic/chat/" + chat.getId(), dto);
 
+
         return dto; // Lo devolvemos por si el Controller lo quiere usar
     }
 
 
     @Override
-    @CacheEvict(value = "sidebar", allEntries = true)
     public String procesarLecturaYNotificar(Long chatId, Long lectorId) {
+        Chat chat = repositorioChat.findById(chatId)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Chat no encontrado"));
+
         // 1. Actualizar DB y obtener mensajes actualizados
         List<Mensaje> mensajesActualizados = marcarMensajesComoLeidos(chatId, lectorId);
 
@@ -405,6 +421,8 @@ public class ServicioChatImpl implements ServicioChat {
                 dtoSidebar
         );
 
+        // Invalidamos la caché solo para los involucrados
+        invalidarCacheSidebarParticipantes(chat);
         return "Mensaje leido correctamente";
     }
 
@@ -508,7 +526,7 @@ public class ServicioChatImpl implements ServicioChat {
     }
 
     @Override
-    @CacheEvict(value = "sidebar", allEntries = true)
+    @CacheEvict(value = "sidebar", key = "#miId")
     public Participante toggleChatFavorito(Long chatId,Long miId) {
         Chat chat = repositorioChat.findById(chatId)
                 .orElseThrow(() -> new RuntimeException("Chat no encontrado"));
@@ -527,7 +545,7 @@ public class ServicioChatImpl implements ServicioChat {
     }
 
     @Override
-    @CacheEvict(value = "sidebar", allEntries = true)
+    @CacheEvict(value = "sidebar", key = "#miId")
     public Participante toggleChatArchivado(Long chatId, Long miId) {
         Chat chat = repositorioChat.findById(chatId)
                 .orElseThrow(() -> new RuntimeException("Chat no encontrado"));
@@ -543,5 +561,17 @@ public class ServicioChatImpl implements ServicioChat {
         miParticipante.setEsArchivado(!miParticipante.getEsArchivado());
 
         return repositorioParticipante.save(miParticipante);
+    }
+
+    private void invalidarCacheSidebarParticipantes(Chat chat) {
+        Cache cacheSidebar = cacheManager.getCache("sidebar");
+
+        if (cacheSidebar != null) {
+            // Recorremos todos los participantes del chat (sean 2 o 50)
+            for (Participante p : chat.getParticipantes()) {
+                // Borramos solo la llave específica de cada usuario (su ID)
+                cacheSidebar.evict(p.getUsuario().getId());
+            }
+        }
     }
 }
