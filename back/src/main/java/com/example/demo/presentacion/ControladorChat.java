@@ -14,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -52,6 +53,7 @@ public class ControladorChat {
                                                          @RequestBody EnviarMensajeDTO dto,
                                                          @UsuarioAutenticado Usuario yo
     ) {
+
         String contenido = dto.getContenido();
         Long replyToId = dto.getReplyToId();
         Long miId = yo.getId();
@@ -60,7 +62,7 @@ public class ControladorChat {
         // DELEGAMOS TODO EL WEBSOCKET AL OTRO MÉTODO
         // Y recuperamos el DTO para devolverlo en el HTTP (opcional pero recomendado)
         NotificacionDTO mensajeDto = servicioChat.procesarYEnviarMensaje(mensajeGuardado);
-
+        System.out.println("LA HORA DE LA NOTIFIACION ES ES " + mensajeDto.getSentAt());
         return ResponseEntity.ok(mensajeDto);
     }
 
