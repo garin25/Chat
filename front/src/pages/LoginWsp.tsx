@@ -3,7 +3,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/features/auth/AuthContext";
-import { useRef, useState } from "react";
+import {useState } from "react";
 
 // 1. OPTIMIZACIÓN: El esquema va AFUERA del componente
 const schema = z.object({
