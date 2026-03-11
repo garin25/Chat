@@ -14,3 +14,6 @@ jwt.expiration=86400000
 # JPA
 spring.jpa.hibernate.ddl-auto=update
 spring.jpa.show-sql=true
+
+#Para que las funciones Date devuelvan la zona horaria de Bs As
+spring.jackson.time-zone=America/Argentina/Buenos_Aires
