@@ -11,9 +11,11 @@ interface MensajeProps {
     sentAt: string;
     respondidoA?: MensajeRespondido | null; // Información del mensaje al que se responde (si existe)|
     setMensajeAResponder: (mensaje: MensajeRespondido | null) => void; // Función para actualizar el estado de mensaje a responder en el componente padre (ChatActivo)
+    tipo?: 'TEXTO' | 'AUDIO' | 'IMAGEN' | 'VIDEO' | 'DOCUMENTO';
+    mediaUrl?: string | null;
 }
 
-export const Mensaje = ({ id, contenido, nombre, esMio, estado, sentAt, respondidoA, setMensajeAResponder }: MensajeProps) => {
+export const Mensaje = ({ id, contenido, nombre, esMio, estado, sentAt, respondidoA, setMensajeAResponder, tipo, mediaUrl }: MensajeProps) => {
 
     const fecha = new Date(sentAt);
     const hora = fecha.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -59,8 +61,30 @@ export const Mensaje = ({ id, contenido, nombre, esMio, estado, sentAt, respondi
                         <span className="respondido-texto">{respondidoA.contenido}</span>
                     </div>
                 )}
-
-                <p className="mensaje-texto">{contenido}</p>
+                {tipo === 'AUDIO' && mediaUrl ? (
+                    <div
+                        className="audio-player-container"
+                        style={{
+                            maxWidth: '100%',
+                            overflow: 'hidden',
+                            borderRadius: '8px' 
+                        }}
+                    >
+                        <audio
+                            controls
+                            src={mediaUrl}
+                            style={{
+                                width: '100%',       
+                                maxWidth: '280px',   
+                                height: '44px',      
+                                outline: 'none',
+                                colorScheme: 'dark'  
+                            }}
+                        />
+                    </div>
+                ) : (
+                    <p className="mensaje-texto">{contenido}</p>
+                )}
 
                 <div className="mensaje-meta">
                     <small>{hora}</small>

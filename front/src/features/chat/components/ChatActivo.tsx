@@ -17,7 +17,14 @@ import { MensajeSkeleton } from "./Mensaje/MensajeSkeleton";
 
 interface ChatProps {
     idChatSeleccionado: number | null,
-    enviarMensaje: (nuevoTexto: string, mensajeAResponder?: MensajeRespondido | null) => void,
+    enviarMensaje: (
+        nuevoTexto: string, 
+        mensajeAResponder?: MensajeRespondido | null,
+        
+        // ¡Magia acá! Los hacemos opcionales (?) y restringimos los strings permitidos
+        tipo?: 'TEXTO' | 'AUDIO' | 'IMAGEN', 
+        mediaUrl?: string | null
+    ) => void;
     headerContactSelected: HeaderContactSelected | null,
     onBack: () => void,
     clientRef: React.MutableRefObject<any>,
@@ -28,7 +35,7 @@ interface ChatProps {
     volverAlPresente: () => void;
     setEnBusqueda: (enBusqueda: boolean) => void;
 }
-export const ChatActivo = ({ idChatSeleccionado, enviarMensaje, headerContactSelected, onBack, clientRef, isConnected, mensajeIdParaEnfocar, setMensajeIdParaEnfocar, viendoHistorial, volverAlPresente, setEnBusqueda }: ChatProps) => {
+export const ChatActivo = ({ idChatSeleccionado, enviarMensaje, headerContactSelected, onBack, clientRef, isConnected, mensajeIdParaEnfocar, setMensajeIdParaEnfocar, viendoHistorial, volverAlPresente, setEnBusqueda }: ChatProps) => {    
     //Simulacion para la carga
     const conversacionFalsa = [
         { id: 1, esMio: false, lineas: 2 },
@@ -388,6 +395,8 @@ export const ChatActivo = ({ idChatSeleccionado, enviarMensaje, headerContactSel
                                 sentAt={mensaje.sentAt}
                                 respondidoA={mensaje.respondidoA}
                                 setMensajeAResponder={setMensajeAResponder}
+                                tipo={mensaje.tipo}
+                                mediaUrl={mensaje.mediaUrl}
                             />
                         )
                     })
@@ -419,7 +428,7 @@ export const ChatActivo = ({ idChatSeleccionado, enviarMensaje, headerContactSel
 
             <InputMessage
                 idChat={idChatSeleccionado}
-                onSend={enviarMensaje}
+                enviarMensaje={enviarMensaje}
                 clientRef={clientRef}
                 mensajeAResponder={mensajeAResponder}
                 setMensajeAResponder={setMensajeAResponder}

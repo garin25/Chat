@@ -16,5 +16,7 @@ public class NotificacionDTO {
     private Long senderId;
     private String sentAt;
     private RespuestaSnippetDTO respondidoA;
+    private String tipo;
+    private String mediaUrl;
 
 }

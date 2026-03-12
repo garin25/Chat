@@ -23,6 +23,9 @@ public class MensajeDTO {
     private SenderDTO sender; // Clase interna pequeña
 
     private RespuestaSnippetDTO respondidoA; // Puede ser null
+    private String tipo;
+    private String mediaUrl;
+
 
     @Data
     @AllArgsConstructor
