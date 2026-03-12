@@ -5,6 +5,7 @@ import com.example.demo.dto.mappers.BusquedaMensajeMapper;
 import com.example.demo.dto.mappers.MensajeMapper;
 import com.example.demo.entidades.*;
 import com.example.demo.entidades.enums.EstadoMensaje;
+import com.example.demo.entidades.enums.TipoMensaje;
 import com.example.demo.excepciones.OperacionInvalidaException;
 import com.example.demo.excepciones.RecursoNoEncontradoException;
 import com.example.demo.excepciones.RecursoRepetidoException;
@@ -72,7 +73,7 @@ public class ServicioChatImpl implements ServicioChat {
     }
     @Transactional
     @Override
-    public Mensaje enviarAlChat(Long miId, Long chatId, String contenido, Long replyToId) {
+    public Mensaje enviarAlChat(Long miId, Long chatId, String contenido, Long replyToId, String tipo, String mediaUrl) {
         Chat chat = repositorioChat.findById(chatId).orElseThrow();
         Usuario usuario = repositorioLogin.findById(miId).orElseThrow();
 
@@ -89,6 +90,12 @@ public class ServicioChatImpl implements ServicioChat {
             // 1. INICIALIZACIÓN: Traemos el nombre del que envió el mensaje original
             mensajeRespondido.getSender().getNombre();
         }
+        if (tipo != null && !tipo.isEmpty()) {
+            mensaje.setTipo(TipoMensaje.valueOf(tipo.toUpperCase()));
+        } else {
+            mensaje.setTipo(TipoMensaje.TEXTO);
+        }
+        mensaje.setMediaUrl(mediaUrl);
 
         // Actualizar Chat (Desnormalización)
         chat.setUltimoMensajeContenido(contenido);
@@ -276,6 +283,8 @@ public class ServicioChatImpl implements ServicioChat {
             dto.setSentAt(mensaje.getSentAt());
             dto.setChatId(chatId);
             dto.setEstado(mensaje.getEstado());
+            dto.setTipo(mensaje.getTipo().toString());
+            dto.setMediaUrl(mensaje.getMediaUrl());
 
             Long senderId = mensaje.getSender().getId();
             String nombreAMostrar;
@@ -341,6 +350,8 @@ public class ServicioChatImpl implements ServicioChat {
         dto.setChatId(mensajeGuardado.getChat().getId());
         dto.setSenderNombre(mensajeGuardado.getSender().getNombre());
         dto.setSenderId(mensajeGuardado.getSender().getId()); // Agregué ID por si el front lo necesita
+        dto.setTipo(mensajeGuardado.getTipo().toString());
+        dto.setMediaUrl(mensajeGuardado.getMediaUrl());
 
 
         if (mensajeGuardado.getMensajeRespondido() != null) {

@@ -16,7 +16,7 @@ public interface ServicioChat {
     ChatSidebarDTO getChatHeaderInfo(Long chatId, Long miId);
 
     @Transactional
-    Mensaje enviarAlChat(Long miId, Long chatId, String contenido,Long replyToId);
+    Mensaje enviarAlChat(Long miId, Long chatId, String contenido,Long replyToId, String tipo, String mediaUrl);
 
     @Transactional
     Contacto agendarContacto(Usuario usuarioTitular, NewContactDTO contactoDTO);

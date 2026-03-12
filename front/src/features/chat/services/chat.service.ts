@@ -36,10 +36,18 @@ export const ChatService = {
         return response.data;
     },
 
-    enviarMensaje: async (chatId: number, contenido: string, replyToId: number | null = null) => {
+    enviarMensaje: async (
+        chatId: number, 
+        contenido: string, 
+        replyToId: number | null,
+        tipo: string = 'TEXTO',       
+        mediaUrl: string | null = null 
+    ) => {
         const response = await apiInstance.post(`/api/chats/${chatId}/messages`, {
             contenido: contenido,
-            replyToId: replyToId
+            replyToId: replyToId,
+            tipo: tipo,             
+            mediaUrl: mediaUrl      
         });
         return response.data;
     },

@@ -56,8 +56,10 @@ public class ControladorChat {
 
         String contenido = dto.getContenido();
         Long replyToId = dto.getReplyToId();
+        String tipo = dto.getTipo();
+        String mediaUrl = dto.getMediaUrl();
         Long miId = yo.getId();
-        Mensaje mensajeGuardado = servicioChat.enviarAlChat(miId, chatId, contenido,replyToId);
+        Mensaje mensajeGuardado = servicioChat.enviarAlChat(miId, chatId, contenido,replyToId,tipo,mediaUrl);
 
         // DELEGAMOS TODO EL WEBSOCKET AL OTRO MÉTODO
         // Y recuperamos el DTO para devolverlo en el HTTP (opcional pero recomendado)

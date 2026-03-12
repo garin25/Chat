@@ -6,11 +6,12 @@ import { ChatService } from '../services/chat.service';
 import { inyectarMensajeEnCache } from './utils';
 import type { MensajeRespondido } from '../interfaces/mensajeRespondido.interface';
 
-interface EnviarMensajePayload {
+export interface EnviarMensajePayload {
     texto: string;
-    respondidoA: MensajeRespondido | null;
+    respondidoA?: { id: number; contenido: string } | null;
+    tipo?: 'TEXTO' | 'AUDIO' | 'IMAGEN'; 
+    mediaUrl?: string | null;
 }
-
 export const useChatMessages = (
     clientRef: any,
     isConnected: boolean,
@@ -112,12 +113,19 @@ export const useChatMessages = (
         // 1. LA LLAMADA A LA API
         mutationFn: (payload: EnviarMensajePayload) => {
             if (!idChatSeleccionado) throw new Error("No hay chat seleccionado");
-            return ChatService.enviarMensaje(idChatSeleccionado, payload.texto, payload.respondidoA?.id || null);
+            
+            return ChatService.enviarMensaje(
+                idChatSeleccionado, 
+                payload.texto, 
+                payload.respondidoA?.id || null,
+                payload.tipo || 'TEXTO',    
+                payload.mediaUrl || null    
+            );
         },
 
         // 2. LA MAGIA OPTIMISTA (Frontend UI instantánea)
         onMutate: async (payload: EnviarMensajePayload) => {
-            const { texto: textoNuevo, respondidoA } = payload;
+            const { texto: textoNuevo, respondidoA, tipo, mediaUrl } = payload;
             const queryKeyMensajes = ['mensajes', Number(idChatSeleccionado)];
 
             // Cancelamos peticiones en vuelo para que nada pise nuestra magia
@@ -129,12 +137,14 @@ export const useChatMessages = (
             const usuarioIdNormalizado = Number(user?.id) || 0;
             const ahora = new Date().toISOString();
 
-            const mensajeOptimista = {
+           const mensajeOptimista = {
                 id: tempId,
                 contenido: textoNuevo,
+                tipo: tipo || 'TEXTO',       
+                mediaUrl: mediaUrl || null,  
                 sentAt: ahora,
                 chatId: idChatSeleccionado,
-                estado: "ENVIANDO", // Estado: Relojito
+                estado: "ENVIANDO", 
                 sender: { id: usuarioIdNormalizado, nombre: user?.nombre || "Yo" },
                 respondidoA: respondidoA 
             };
@@ -150,7 +160,9 @@ export const useChatMessages = (
                             ...c, 
                             ultimo_mensaje: textoNuevo, 
                             ultimo_mensaje_fecha: ahora, 
-                            ultimo_mensaje_estado: 'ENVIANDO' 
+                            ultimo_mensaje_estado: 'ENVIANDO',
+                            ultimo_mensaje_sender_nombre: user?.nombre || "Yo",
+                            ultimo_mensaje_sender_id: user?.id
                           }
                         : c
                 );
@@ -223,13 +235,18 @@ export const useChatMessages = (
         }
     });
 
-    const enviarMensaje = (texto: string, mensajeRespondidoState: MensajeRespondido | null = null) => {
-
+   const enviarMensaje = (
+        texto: string, 
+        mensajeRespondidoState: MensajeRespondido | null = null,
+        tipo: 'TEXTO' | 'AUDIO' | 'IMAGEN' = 'TEXTO', // 👈 Por defecto es TEXTO
+        mediaUrl: string | null = null                // 👈 Por defecto es null
+    ) => {
         enviarMensajeMutation.mutate({
             texto: texto,
-            respondidoA: mensajeRespondidoState
+            respondidoA: mensajeRespondidoState,
+            tipo: tipo,
+            mediaUrl: mediaUrl
         });
-
     };
     // --- 5. DERIVADOS (Calculados al vuelo) ---
     // Ya no necesitas un estado para 'headerContactSelected'.
