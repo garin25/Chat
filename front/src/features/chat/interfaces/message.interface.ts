@@ -15,6 +15,7 @@ export interface Message {
         nombre: string;
         avatarUrl?: string;
     };
-
+    tipo:string,
+    mediaUrl:string|null,
     respondidoA?: MensajeRespondido | null;
 }
