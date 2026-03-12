@@ -251,6 +251,8 @@ export const useSocketEvents = (
                     id: senderId,
                     nombre: getSenderName(payload)
                 },
+                tipo: payload.tipo || 'TEXTO', 
+                mediaUrl: payload.mediaUrl || null,
                 respondidoA: payload.respondidoA || null,
             };
 

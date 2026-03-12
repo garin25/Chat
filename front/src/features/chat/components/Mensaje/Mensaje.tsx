@@ -1,6 +1,7 @@
 import type { MensajeRespondido } from '../../interfaces/mensajeRespondido.interface';
 import { FaReply } from "react-icons/fa";
 import './Mensaje.css';
+import { CustomAudioPlayer } from '../CustomAudioPlayer';
 
 interface MensajeProps {
     id: number,
@@ -62,26 +63,7 @@ export const Mensaje = ({ id, contenido, nombre, esMio, estado, sentAt, respondi
                     </div>
                 )}
                 {tipo === 'AUDIO' && mediaUrl ? (
-                    <div
-                        className="audio-player-container"
-                        style={{
-                            maxWidth: '100%',
-                            overflow: 'hidden',
-                            borderRadius: '8px' 
-                        }}
-                    >
-                        <audio
-                            controls
-                            src={mediaUrl}
-                            style={{
-                                width: '100%',       
-                                maxWidth: '280px',   
-                                height: '44px',      
-                                outline: 'none',
-                                colorScheme: 'dark'  
-                            }}
-                        />
-                    </div>
+                   <CustomAudioPlayer mediaUrl={mediaUrl} />
                 ) : (
                     <p className="mensaje-texto">{contenido}</p>
                 )}
