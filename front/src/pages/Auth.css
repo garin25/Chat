@@ -197,3 +197,44 @@
    top: 50%;
    transform: translateY(-50%); 
 */
+
+
+/* Separador visual con líneas a los costados */
+.demo-divider {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    margin: 1rem 0;
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.demo-divider::before,
+.demo-divider::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px solid #ddd;
+}
+
+.demo-divider span {
+    padding: 0 10px;
+}
+
+/* Estilo del botón demo (diseño secundario "outline") */
+.demo-btn {
+    width: 100%;
+    padding: 0.75rem;
+    background-color: transparent;
+    color: #25D366; /* Usa el color principal de tu app, asumo verde estilo wsp */
+    border: 2px solid #25D366;
+    border-radius: 4px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-bottom: 1rem;
+}
+
+.demo-btn:hover {
+    background-color: #25D366;
+    color: white;
+}
