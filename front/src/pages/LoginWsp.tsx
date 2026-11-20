@@ -17,17 +17,19 @@ function LoginForm() {
     const navigate = useNavigate();
     const { login } = useAuth();
     const [mostrandoContrasenia, setMostrandoContrasenia] = useState(false);
-    
+    const [isLoading, setIsLoading] = useState(false); // Estado para controlar la carga
+
     const {
         register,
         handleSubmit,
-        setValue, // Extraemos setValue para autocompletar la demo
+        setValue,
         formState: { errors }
     } = useForm<LoginFormValues>({
         resolver: zodResolver(schema)
     });
 
     const onSubmit = async (data: LoginFormValues) => {
+        setIsLoading(true);
         try {
             const response = await fetch(`${API_URL}/api/usuarios/login`, {
                 method: 'POST',
@@ -46,22 +48,21 @@ function LoginForm() {
 
         } catch (error) {
             console.error("Error de red:", error);
-            alert("No se pudo conectar con el servidor");
+            alert("No se pudo conectar con el servidor. Si estaba inactivo, intentá nuevamente en unos segundos.");
+        } finally {
+            setIsLoading(false); // Siempre libera el estado de carga al terminar
         }
     };
 
-    // Función para manejar el login de la demo
     const handleDemoLogin = () => {
         const demoData = {
             telefono: "1128578286",
             password: "contrasenia"
         };
-        
-        // Completamos los inputs visualmente para mejor UX
+
         setValue("telefono", demoData.telefono);
         setValue("password", demoData.password);
-        
-        // Ejecutamos el submit directamente
+
         onSubmit(demoData);
     };
 
@@ -76,7 +77,12 @@ function LoginForm() {
                 <form onSubmit={handleSubmit(onSubmit)} className="auth-form">
                     <div className="form-group">
                         <label>Telefono:</label>
-                        <input type="text" className="form-input" {...register("telefono")} />
+                        <input
+                            type="text"
+                            className="form-input"
+                            disabled={isLoading}
+                            {...register("telefono")}
+                        />
                         {errors.telefono && <span className="error-msg">{errors.telefono.message}</span>}
                     </div>
                     <div className="form-group">
@@ -85,12 +91,14 @@ function LoginForm() {
                             <input
                                 type={mostrandoContrasenia ? "text" : "password"}
                                 className="form-input password-input"
+                                disabled={isLoading}
                                 {...register("password")}
                             />
                             <button
                                 type="button"
                                 onClick={handleMostrarContrasenia}
                                 className="toggle-password-btn"
+                                disabled={isLoading}
                             >
                                 {mostrandoContrasenia ? "Ocultar" : "Mostrar"}
                             </button>
@@ -98,20 +106,33 @@ function LoginForm() {
                         {errors.password && <span className="error-msg">{errors.password.message}</span>}
                     </div>
 
-                    <button type="submit" className="submit-btn">Login</button>
-                    
+                    <button
+                        type="submit"
+                        className="submit-btn"
+                        disabled={isLoading}
+                    >
+                        {isLoading ? "Conectando..." : "Login"}
+                    </button>
+
                     {/* --- SECCIÓN BOTÓN DEMO --- */}
                     <div className="demo-divider">
                         <span>o ingresa con</span>
                     </div>
-                    
-                    <button 
-                        type="button" 
-                        onClick={handleDemoLogin} 
+
+                    <button
+                        type="button"
+                        onClick={handleDemoLogin}
                         className="demo-btn"
+                        disabled={isLoading}
                     >
-                        Probar cuenta Demo
+                        {isLoading ? "Despertando servidor, aguarde..." : "Probar cuenta Demo"}
                     </button>
+
+                    {isLoading && (
+                        <p style={{ fontSize: "0.8rem", color: "#666", textAlign: "center", marginTop: "8px" }}>
+                            El servidor gratuito puede demorar hasta 45s en iniciar por inactividad.
+                        </p>
+                    )}
                     {/* --------------------------- */}
 
                     <div className="auth-footer">
